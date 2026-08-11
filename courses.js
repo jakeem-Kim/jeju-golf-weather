@@ -49,8 +49,18 @@ const GOLF_COURSES = [
   { id:"club72",    name:"클럽72(스카이72)",  zone:"수도권", region:"인천 중구", addr:"인천 중구 영종도", lat:37.49, lon:126.55 },
   { id:"nicklaus",  name:"잭니클라우스GC코리아",zone:"수도권", region:"인천 연수", addr:"인천 연수구 송도동", lat:37.38, lon:126.64 },
   { id:"verthill",  name:"베르힐 영종 CC",    zone:"수도권", region:"인천 영종도", addr:"인천 중구 한상중앙로 66 · 서해안 임해", lat:37.525, lon:126.530 },
+  { id:"gapyeongbenest",name:"가평베네스트GC",zone:"수도권", region:"경기 가평", addr:"가평군 상면 둔덕말길 232", lat:37.74, lon:127.40 },
+  { id:"incheonintl",name:"인천국제CC",       zone:"수도권", region:"인천 서구", addr:"인천 서구 경서동", lat:37.55, lon:126.63 },
+  { id:"jaeil",     name:"제일CC",            zone:"수도권", region:"경기 안산", addr:"안산시 상록구 부곡동", lat:37.32, lon:126.87 },
+  { id:"foresthill",name:"포레스트힐CC",      zone:"수도권", region:"경기 포천", addr:"포천시 화현면 봉화로 253 · 해발 약 350m", lat:37.89, lon:127.31 },
+  { id:"lakewood",  name:"레이크우드CC",      zone:"수도권", region:"경기 양주", addr:"양주시 만송로 244", lat:37.83, lon:127.03 },
+  { id:"northpalm", name:"노스팜CC",          zone:"수도권", region:"경기 파주", addr:"파주시 광탄면 쇠장이길 265", lat:37.80, lon:126.90 },
+  { id:"bavista",   name:"비에이비스타CC",    zone:"수도권", region:"경기 이천", addr:"이천시 모가면 어농리", lat:37.16, lon:127.40 },
+  { id:"hillmaru",  name:"포천 힐마루CC",     zone:"수도권", region:"경기 포천", addr:"포천시 영중면 금화봉4길 77", lat:38.00, lon:127.25 },
+  { id:"philos",    name:"필로스CC",          zone:"수도권", region:"경기 포천", addr:"포천시 일동면 운악청계로 1507", lat:38.00, lon:127.34 },
 
   /* ── 강원 ── */
+  { id:"whistling", name:"휘슬링락CC",        zone:"강원", region:"춘천", addr:"춘천시 남산면 동촌로 501", lat:37.78, lon:127.56 },
   { id:"oakvalley", name:"오크밸리CC",        zone:"강원", region:"원주", addr:"원주시 지정면", lat:37.42, lon:127.83 },
   { id:"oakhills",  name:"오크힐스CC",        zone:"강원", region:"원주", addr:"원주시 문막읍", lat:37.30, lon:127.82 },
   { id:"jade",      name:"제이드팰리스GC",    zone:"강원", region:"춘천", addr:"춘천시 남산면", lat:37.79, lon:127.58 },
