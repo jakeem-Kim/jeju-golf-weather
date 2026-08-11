@@ -104,7 +104,7 @@
 /* 드롭다운 채우기 (지역 그룹) */
 const sel = document.getElementById('selCourse');
 ZONE_ORDER.forEach(zone=>{
-  const list = GOLF_COURSES.filter(c=>c.zone===zone);
+  const list = GOLF_COURSES.filter(c=>c.zone===zone).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
   if(!list.length) return;
   const og=document.createElement('optgroup'); og.label=`${zone} (${list.length})`;
   list.forEach(c=>{
