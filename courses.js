@@ -98,6 +98,17 @@ const GOLF_COURSES = [
   { id:"daejeon",   name:"대전CC",            zone:"충청", region:"대전", addr:"대전 동구 세천동", lat:36.34, lon:127.48 },
   { id:"yuseong",   name:"유성CC",            zone:"충청", region:"대전", addr:"대전 유성구", lat:36.37, lon:127.32 },
   { id:"sejong",    name:"세종필드CC",        zone:"충청", region:"세종", addr:"세종시 전동면", lat:36.60, lon:127.28 },
+  { id:"sejongemerson",name:"세종에머슨CC",   zone:"충청", region:"세종", addr:"세종시 전의면 운주산로 1510", lat:36.68, lon:127.22 },
+  { id:"cheollyong",name:"천룡CC",            zone:"충청", region:"충북 진천", addr:"진천군 이월면 진안로 347-123", lat:36.92, lon:127.44 },
+  { id:"hiddenvalley",name:"히든밸리CC",      zone:"충청", region:"충북 진천", addr:"진천군 백곡면 소토골길 61", lat:36.90, lon:127.38 },
+  { id:"anantijoongang",name:"아난티 중앙CC", zone:"충청", region:"충북 진천", addr:"진천군 백곡면 배티로 818-105", lat:36.88, lon:127.34 },
+  { id:"edinburghoc",name:"오창 에딘버러CC",  zone:"충청", region:"충북 청주", addr:"청주시 청원구 오창읍 두릉유리로 846", lat:36.73, lon:127.43 },
+  { id:"serenity",  name:"세레니티CC",        zone:"충청", region:"충북 청주", addr:"청주시 서원구 남이면", lat:36.55, lon:127.42 },
+  { id:"monarch",   name:"모나크CC",          zone:"충청", region:"충북 음성", addr:"음성군 금왕읍 대금로1851번길", lat:36.98, lon:127.58 },
+  { id:"jinyang",   name:"진양밸리CC",        zone:"충청", region:"충북 음성", addr:"음성군 삼성면 금일로 1195", lat:36.99, lon:127.56 },
+  { id:"cygnus",    name:"시그너스CC",        zone:"충청", region:"충북 충주", addr:"충주시 앙성면 중방곡길 57-44", lat:37.05, lon:127.76 },
+  { id:"princess",  name:"프린세스GC",        zone:"충청", region:"충남 공주", addr:"공주시 정안면 방자들길 81-50", lat:36.56, lon:127.12 },
+  { id:"edinburghgs",name:"금산 에딘버러CC",  zone:"충청", region:"충남 금산", addr:"금산군 진산면 살구정길 167", lat:36.15, lon:127.35 },
 
   /* ── 영남 (경상·부산·대구·울산) ── */
   { id:"busan",     name:"부산CC",            zone:"영남", region:"경남 양산", addr:"양산시 동면", lat:35.35, lon:129.10 },
