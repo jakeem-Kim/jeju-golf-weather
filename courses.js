@@ -212,5 +212,14 @@ function addFavorite(course,date){
 }
 function removeFavorite(course,date){ saveFavorites(getFavorites().filter(f=>!(f.course===course && f.date===date))); }
 
+/* 예약된 라운딩(기본 프리셋) 숨김 처리 — 방문자가 X로 지운 목록 */
+const DISMISS_KEY = "golfwx_dismissed_presets_v1";
+function getDismissed(){ try{ return JSON.parse(localStorage.getItem(DISMISS_KEY)) || []; }catch(e){ return []; } }
+function isPresetDismissed(course,date){ return getDismissed().some(f=>f.course===course && f.date===date); }
+function dismissPreset(course,date){
+  const a=getDismissed();
+  if(!a.some(f=>f.course===course && f.date===date)){ a.push({course,date}); try{ localStorage.setItem(DISMISS_KEY, JSON.stringify(a)); }catch(e){} }
+}
+
 /* 지도 마커 지역별 색상 */
 const ZONE_COLOR = { "수도권":"#1668c4", "강원":"#0f9a86", "충청":"#c9840a", "영남":"#d43b4a", "호남":"#7a5cd0", "제주":"#d94f97" };

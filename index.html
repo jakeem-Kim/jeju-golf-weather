@@ -208,7 +208,7 @@ ZONE_ORDER.forEach(z=>{ const n=GOLF_COURSES.filter(c=>c.zone===z).length; if(!n
   const s=document.createElement('span'); s.innerHTML=`<i style="background:${ZONE_COLOR[z]}"></i>${z} ${n}`; legend.appendChild(s); });
 
 /* ── 카드 렌더 공용 (예약 라운딩 / 즐겨찾기) ── */
-function makeCard(c, date, {removable=false}={}){
+function makeCard(c, date, {onRemove=null, removeTitle='삭제'}={}){
   const a=document.createElement('a');
   a.className='round'; a.href=`detail.html?course=${c.id}&date=${date}`;
   a.innerHTML = `<div class="region">${c.region}</div>
@@ -216,9 +216,9 @@ function makeCard(c, date, {removable=false}={}){
     <div class="rdate">📅 ${date.replaceAll('-','.')} (${weekday(date)})</div>
     <div class="peek"><span class="d">예보 확인 중…</span></div>
     <div class="go">상세 예보 보기 →</div>`;
-  if(removable){
-    const x=document.createElement('button'); x.className='fav-x'; x.textContent='✕'; x.title='즐겨찾기 삭제';
-    x.onclick=(e)=>{ e.preventDefault(); e.stopPropagation(); removeFavorite(c.id,date); renderFavorites(); };
+  if(onRemove){
+    const x=document.createElement('button'); x.className='fav-x'; x.textContent='✕'; x.title=removeTitle;
+    x.onclick=(e)=>{ e.preventDefault(); e.stopPropagation(); onRemove(); };
     a.appendChild(x);
   }
   loadPeek(a.querySelector('.peek'), c, date);
@@ -239,9 +239,16 @@ async function loadPeek(el, c, date){
   }
 }
 
-/* ── 예약된 라운딩 ── */
-const roundsWrap=document.getElementById('rounds');
-PRESET_ROUNDS.forEach(r=>{ const c=courseById(r.course); if(c) roundsWrap.appendChild(makeCard(c, r.date)); });
+/* ── 예약된 라운딩 (X로 숨김 가능) ── */
+function renderPresets(){
+  const wrap=document.getElementById('rounds'); wrap.innerHTML='';
+  const list=PRESET_ROUNDS.filter(r=>courseById(r.course) && !isPresetDismissed(r.course,r.date));
+  if(!list.length){ wrap.innerHTML=`<div class="empty-fav">표시할 예약 라운딩이 없습니다.</div>`; return; }
+  list.forEach(r=>{
+    const c=courseById(r.course);
+    wrap.appendChild(makeCard(c, r.date, {removeTitle:'예약 라운딩 숨기기', onRemove:()=>{ dismissPreset(r.course,r.date); renderPresets(); }}));
+  });
+}
 
 /* ── 즐겨찾기 ── */
 function renderFavorites(){
@@ -254,13 +261,14 @@ function renderFavorites(){
     return;
   }
   const grid=document.createElement('div'); grid.className='rounds';
-  favs.forEach(f=>{ grid.appendChild(makeCard(courseById(f.course), f.date, {removable:true})); });
+  favs.forEach(f=>{ grid.appendChild(makeCard(courseById(f.course), f.date, {removeTitle:'즐겨찾기 삭제', onRemove:()=>{ removeFavorite(f.course,f.date); renderFavorites(); }})); });
   wrap.appendChild(grid);
 }
 
 /* ── 초기화 ── */
 initMap();
 updateSelNote();
+renderPresets();
 renderFavorites();
 </script>
 </body>
