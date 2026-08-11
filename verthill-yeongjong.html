@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>베르힐 영종 CC 기상 대시보드 · 9월 3일</title>
+<style>
+  :root{
+    --bg:#eaf0f4; --panel:#ffffff; --panel2:#f2f6fa; --line:#d8e2ea;
+    --txt:#152230; --muted:#5a6b7d; --accent:#1668c4; --accent2:#0f9a86;
+    --good:#0f9a86; --warn:#c47f00; --danger:#d43b4a;
+    --chip:#e7eff7; --shadow:0 8px 28px rgba(30,60,90,.10);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0a1119; --panel:#111c28; --panel2:#17242f; --line:#243440;
+      --txt:#e7eef5; --muted:#8ea1b3; --accent:#4ea6ff; --accent2:#35d1b6;
+      --good:#35d1b6; --warn:#ffb648; --danger:#ff6371;
+      --chip:#1c2a37; --shadow:0 10px 34px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"]{
+      --bg:#0a1119; --panel:#111c28; --panel2:#17242f; --line:#243440;
+      --txt:#e7eef5; --muted:#8ea1b3; --accent:#4ea6ff; --accent2:#35d1b6;
+      --good:#35d1b6; --warn:#ffb648; --danger:#ff6371;
+      --chip:#1c2a37; --shadow:0 10px 34px rgba(0,0,0,.4);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+    font-family:"Segoe UI","Malgun Gothic","Apple SD Gothic Neo",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.5}
+  .wrap{max-width:760px;margin:0 auto;padding:26px 18px 64px}
+  header.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;justify-content:space-between}
+  h1{font-size:22px;margin:0;letter-spacing:-.4px}
+  .sub{color:var(--muted);font-size:13px;margin-top:4px}
+  .status{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--accent2)}
+  .dot.err{background:var(--danger)} .dot.load{background:var(--warn)} .dot.wait{background:var(--accent)}
+  button.refresh{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer}
+  button.refresh:disabled{opacity:.55;cursor:default}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;margin-top:18px}
+  .card h2{margin:0;font-size:18px;letter-spacing:-.2px}
+  .card-head{padding:18px 20px 15px;background:linear-gradient(180deg,var(--panel2),transparent);border-bottom:1px solid var(--line)}
+  .course-meta{color:var(--muted);font-size:12.5px;margin-top:3px}
+  .date-badge{display:inline-block;background:var(--chip);color:var(--accent);border:1px solid var(--line);border-radius:999px;padding:3px 11px;font-size:12px;font-weight:700;margin-top:9px}
+  .headline{display:flex;align-items:center;gap:16px;padding:16px 20px}
+  .bigtemp{font-size:44px;font-weight:800;letter-spacing:-1.5px;line-height:1;font-variant-numeric:tabular-nums}
+  .wxicon{font-size:46px;line-height:1}
+  .headline .desc{font-size:14px}
+  .headline .desc .sm{color:var(--muted);font-size:12.5px}
+  .metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .metric{background:var(--panel);padding:12px 10px;text-align:center}
+  .metric .k{font-size:11px;color:var(--muted);margin-bottom:3px}
+  .metric .v{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+  .metric .u{font-size:11px;color:var(--muted);font-weight:400}
+  .risk{margin:0;padding:12px 20px;display:flex;align-items:center;gap:10px;font-size:13.5px;border-bottom:1px solid var(--line)}
+  .risk .tag{font-weight:700;padding:3px 10px;border-radius:8px;font-size:12px}
+  .risk.low .tag{background:color-mix(in srgb,var(--good) 18%,transparent);color:var(--good)}
+  .risk.mid .tag{background:color-mix(in srgb,var(--warn) 20%,transparent);color:var(--warn)}
+  .risk.high .tag{background:color-mix(in srgb,var(--danger) 18%,transparent);color:var(--danger)}
+  .risk .note{color:var(--muted);font-size:12.5px}
+  .sec-title{font-size:11.5px;color:var(--muted);font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:14px 20px 6px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;font-variant-numeric:tabular-nums}
+  .tbl-scroll{overflow-x:auto}
+  th,td{padding:7px 8px;text-align:center;white-space:nowrap}
+  thead th{color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);background:var(--panel)}
+  tbody tr:nth-child(even){background:var(--panel2)}
+  .hour td:first-child{font-weight:700}
+  td.rain{color:var(--accent)} td.hot{color:var(--danger)}
+  .src-table td:first-child,.src-table th:first-child{text-align:left;font-weight:600}
+  .src-flag{font-size:14px;margin-right:5px}
+  .cardfoot{padding:10px 20px 16px;color:var(--muted);font-size:11.5px}
+  .waiting{padding:34px 24px;text-align:center}
+  .waiting .big{font-size:40px}
+  .waiting h3{margin:10px 0 6px;font-size:17px}
+  .waiting p{margin:4px 0;color:var(--muted);font-size:13px}
+  .waiting .avail{display:inline-block;margin-top:12px;background:var(--chip);border:1px solid var(--line);color:var(--accent);border-radius:10px;padding:8px 14px;font-size:13px;font-weight:700}
+  .legend{margin-top:22px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 20px;font-size:12.5px;color:var(--muted)}
+  .legend b{color:var(--txt)}
+  .legend ul{margin:8px 0 0;padding-left:18px} .legend li{margin:4px 0}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>⛳ 베르힐 영종 CC 기상 대시보드</h1>
+      <div class="sub">기상청(KMA)·일본기상청(JMA)·독일 DWD·미국 NOAA 예보 모델 실시간 비교 · 30분 자동 갱신</div>
+    </div>
+    <div class="status">
+      <span class="dot load" id="statusDot"></span>
+      <span id="statusText">불러오는 중…</span>
+      <span id="nextUpd"></span>
+      <button class="refresh" id="refreshBtn">새로고침</button>
+    </div>
+  </header>
+
+  <div id="card"></div>
+
+  <div class="legend">
+    <b>데이터 출처 &amp; 판독 안내</b>
+    <ul>
+      <li>모든 값은 <b>Open-Meteo</b>를 통해 각 기관의 원본 예보 모델에서 실시간 수신합니다: 🇰🇷 대한민국 기상청(KMA), 🇯🇵 일본 기상청(JMA), 🇩🇪 독일 기상청(DWD·ICON), 🇺🇸 미국 NOAA(GFS). 카드 상단 대표값은 위치별 최적 모델을 자동 선택한 <b>종합 예보</b>입니다.</li>
+      <li><b>예보 제공 범위</b>는 발표일 기준 약 16일입니다. 9월 3일 예보는 <b id="availInline">—</b>부터 표시되며, 그 전까지는 "예보 준비 중"으로 나타납니다. 날짜가 가까워질수록 정확도가 올라갑니다.</li>
+      <li><b>낙뢰 위험도</b>는 예보 기상코드의 뇌우 여부와 대기 불안정 지수(CAPE)로 산출합니다. <b>강수확률</b>은 KMA·JMA 모델이 제공하지 않아 "—"로 표시될 수 있습니다.</li>
+      <li>예보는 실황이 아니므로 라운딩 당일 아침 재확인을 권장합니다. 낙뢰 예보 시 경기 중단 규정을 따르세요.</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+const COURSE = { name:"베르힐 영종 CC", addr:"인천 중구 한상중앙로 66 · 영종도 중산동 · 서해안 임해",
+  lat:37.525, lon:126.530, date:"2026-09-03", dow:"목요일" };
+const MODELS = [
+  { key:"kma_seamless",  label:"기상청 KMA",  flag:"🇰🇷" },
+  { key:"jma_seamless",  label:"일본기상청 JMA", flag:"🇯🇵" },
+  { key:"icon_seamless", label:"독일 DWD",    flag:"🇩🇪" },
+  { key:"gfs_seamless",  label:"미국 NOAA",   flag:"🇺🇸" }
+];
+const REFRESH_MS = 30*60*1000;
+const PLAY_HOURS = [6,7,8,9,10,11,12,13,14,15,16,17,18,19];
+const WMO = {0:["맑음","☀️"],1:["대체로 맑음","🌤️"],2:["부분 흐림","⛅"],3:["흐림","☁️"],45:["안개","🌫️"],48:["짙은 안개","🌫️"],51:["약한 이슬비","🌦️"],53:["이슬비","🌦️"],55:["강한 이슬비","🌦️"],56:["어는 이슬비","🌧️"],57:["강한 어는 이슬비","🌧️"],61:["약한 비","🌧️"],63:["비","🌧️"],65:["강한 비","🌧️"],66:["어는 비","🌧️"],67:["강한 어는 비","🌧️"],71:["약한 눈","🌨️"],73:["눈","🌨️"],75:["강한 눈","🌨️"],77:["싸락눈","🌨️"],80:["약한 소나기","🌦️"],81:["소나기","🌦️"],82:["강한 소나기","⛈️"],85:["소낙눈","🌨️"],86:["강한 소낙눈","🌨️"],95:["뇌우","⛈️"],96:["우박 동반 뇌우","⛈️"],99:["강한 우박 뇌우","⛈️"]};
+function wmo(c){ return WMO[c] || ["-","❓"]; }
+function windDir(deg){ if(deg==null) return "-"; const d=["북","북동","동","남동","남","남서","서","북서"]; return d[Math.round(deg/45)%8]; }
+function fmt(v,dec=0,dash="—"){ return (v==null||isNaN(v)) ? dash : Number(v).toFixed(dec); }
+function capeRisk(cape, hasThunder){
+  if(hasThunder) return {cls:"high",tag:"높음",txt:"뇌우 발생 예보 — 낙뢰 주의"};
+  if(cape==null) return {cls:"low",tag:"정보없음",txt:"불안정 지수 데이터 없음"};
+  if(cape>=2500) return {cls:"high",tag:"매우 높음",txt:"대기 매우 불안정(CAPE "+Math.round(cape)+")"};
+  if(cape>=1000) return {cls:"high",tag:"높음",txt:"대기 불안정(CAPE "+Math.round(cape)+") — 오후 뇌우 가능"};
+  if(cape>=500)  return {cls:"mid",tag:"보통",txt:"국지적 소나기 가능(CAPE "+Math.round(cape)+")"};
+  return {cls:"low",tag:"낮음",txt:"대기 안정(CAPE "+Math.round(cape)+")"};
+}
+function availDateStr(){
+  const t=new Date(COURSE.date+"T00:00:00");
+  t.setDate(t.getDate()-16);
+  return t.toLocaleDateString('ko-KR',{month:'long',day:'numeric'})+"경 (예보 D-16)";
+}
+
+async function fetchMaybe(url){
+  try{ const r=await fetch(url); if(!r.ok) return {ok:false, status:r.status}; return {ok:true, data:await r.json()}; }
+  catch(e){ return {ok:false, status:0, err:e.message}; }
+}
+function mainURL(){
+  const h="temperature_2m,apparent_temperature,precipitation,precipitation_probability,wind_speed_10m,wind_gusts_10m,wind_direction_10m,relative_humidity_2m,cape,weather_code";
+  return `https://api.open-meteo.com/v1/forecast?latitude=${COURSE.lat}&longitude=${COURSE.lon}&hourly=${h}&timezone=Asia%2FSeoul&wind_speed_unit=kmh&start_date=${COURSE.date}&end_date=${COURSE.date}&models=best_match`;
+}
+function srcURL(){
+  const d="temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,weather_code";
+  return `https://api.open-meteo.com/v1/forecast?latitude=${COURSE.lat}&longitude=${COURSE.lon}&daily=${d}&timezone=Asia%2FSeoul&wind_speed_unit=kmh&start_date=${COURSE.date}&end_date=${COURSE.date}&models=${MODELS.map(m=>m.key).join(",")}`;
+}
+
+function waitingCard(){
+  return `<div class="card">
+    <div class="card-head">
+      <h2>${COURSE.name}</h2>
+      <div class="course-meta">${COURSE.addr}</div>
+      <span class="date-badge">📅 ${COURSE.date.replaceAll('-','.')} (${COURSE.dow})</span>
+    </div>
+    <div class="waiting">
+      <div class="big">🗓️</div>
+      <h3>예보 준비 중</h3>
+      <p>9월 3일은 아직 예보 모델의 제공 범위(약 16일)를 벗어났습니다.</p>
+      <p>이 페이지는 매 30분 자동으로 데이터를 확인하며, 범위에 들어오는 즉시 채워집니다.</p>
+      <span class="avail">📡 데이터 표시 시작: ${availDateStr()}</span>
+    </div>
+  </div>`;
+}
+
+function dataCard(main, srcRes){
+  const H = main.hourly;
+  const idx = H.time.map(t=>Number(t.slice(11,13)));
+  let mid = idx.indexOf(13); if(mid<0) mid=Math.floor(idx.length/2);
+  const at = h => idx.indexOf(h);
+  const codesPlay = PLAY_HOURS.map(h=>{const i=at(h);return i>=0?H.weather_code[i]:null;}).filter(v=>v!=null);
+  const hasThunder = codesPlay.some(x=>x>=95);
+  const capePlay = PLAY_HOURS.map(h=>{const i=at(h);return i>=0?H.cape[i]:null;}).filter(v=>v!=null);
+  const capeMax = capePlay.length? Math.max(...capePlay): null;
+  const risk = capeRisk(capeMax, hasThunder);
+  const temps = PLAY_HOURS.map(h=>{const i=at(h);return i>=0?H.temperature_2m[i]:null;}).filter(v=>v!=null);
+  const tMax = temps.length?Math.max(...temps):null, tMin=temps.length?Math.min(...temps):null;
+  const precSum = PLAY_HOURS.reduce((s,h)=>{const i=at(h);return s+(i>=0&&H.precipitation[i]?H.precipitation[i]:0);},0);
+  const popMax = Math.max(0,...PLAY_HOURS.map(h=>{const i=at(h);return i>=0&&H.precipitation_probability[i]!=null?H.precipitation_probability[i]:0;}));
+  const windMax = Math.max(0,...PLAY_HOURS.map(h=>{const i=at(h);return i>=0&&H.wind_speed_10m[i]!=null?H.wind_speed_10m[i]:0;}));
+  const gustMax = Math.max(0,...PLAY_HOURS.map(h=>{const i=at(h);return i>=0&&H.wind_gusts_10m[i]!=null?H.wind_gusts_10m[i]:0;}));
+  const [wdesc,wemo] = wmo(H.weather_code[mid]);
+
+  let rows="";
+  PLAY_HOURS.forEach(h=>{
+    const i=at(h); if(i<0) return;
+    const [,emo]=wmo(H.weather_code[i]);
+    const t=H.temperature_2m[i], pr=H.precipitation[i], pop=H.precipitation_probability[i],
+          w=H.wind_speed_10m[i], g=H.wind_gusts_10m[i], wd=H.wind_direction_10m[i], cp=H.cape[i];
+    rows+=`<tr class="hour"><td>${String(h).padStart(2,'0')}시</td><td>${emo}</td>`
+      +`<td class="${t>=30?'hot':''}">${fmt(t,1)}°</td>`
+      +`<td class="${pop>=60?'rain':''}">${fmt(pop,0)}${pop!=null?'%':''}</td>`
+      +`<td class="${pr>=1?'rain':''}">${fmt(pr,1)}</td>`
+      +`<td>${windDir(wd)} ${fmt(w,0)}</td><td>${fmt(g,0)}</td>`
+      +`<td>${cp>=1000?'⚠️':''}${fmt(cp,0)}</td></tr>`;
+  });
+
+  let srows="";
+  const D = (srcRes && srcRes.daily) ? srcRes.daily : {};
+  MODELS.forEach(m=>{
+    const g=(f)=>{const a=D[f+"_"+m.key];return a&&a.length?a[0]:null;};
+    const tmax=g("temperature_2m_max"), tmin=g("temperature_2m_min"),
+          ps=g("precipitation_sum"), pp=g("precipitation_probability_max"),
+          wm=g("wind_speed_10m_max"), wc=g("weather_code");
+    const [dsc,emo]= wc!=null?wmo(wc):["—","·"];
+    const avail = (tmax!=null);
+    srows+=`<tr style="${avail?'':'opacity:.5'}"><td><span class="src-flag">${m.flag}</span>${m.label}</td>`
+      +`<td>${emo} ${avail?dsc:'데이터 없음'}</td><td>${fmt(tmin,0)}° / ${fmt(tmax,0)}°</td>`
+      +`<td>${fmt(pp,0)}${pp!=null?'%':''}</td><td>${fmt(ps,1)}mm</td><td>${fmt(wm,0)}</td></tr>`;
+  });
+
+  return `<div class="card">
+    <div class="card-head">
+      <h2>${COURSE.name}</h2>
+      <div class="course-meta">${COURSE.addr}</div>
+      <span class="date-badge">📅 ${COURSE.date.replaceAll('-','.')} (${COURSE.dow})</span>
+    </div>
+    <div class="headline">
+      <div class="wxicon">${wemo}</div>
+      <div class="bigtemp">${fmt(H.temperature_2m[mid],0)}<span style="font-size:22px">°C</span></div>
+      <div class="desc">
+        <div>${wdesc}</div>
+        <div class="sm">체감 ${fmt(H.apparent_temperature[mid],0)}° · 13시 기준</div>
+        <div class="sm">낮 최고 ${fmt(tMax,0)}° / 최저 ${fmt(tMin,0)}° · 습도 ${fmt(H.relative_humidity_2m[mid],0)}%</div>
+      </div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="k">강수확률(최대)</div><div class="v">${fmt(popMax,0)}<span class="u">%</span></div></div>
+      <div class="metric"><div class="k">예상 강수량</div><div class="v">${fmt(precSum,1)}<span class="u">mm</span></div></div>
+      <div class="metric"><div class="k">바람(최대)</div><div class="v">${fmt(windMax,0)}<span class="u">km/h</span></div></div>
+      <div class="metric"><div class="k">순간돌풍</div><div class="v">${fmt(gustMax,0)}<span class="u">km/h</span></div></div>
+    </div>
+    <div class="risk ${risk.cls}">
+      <span style="font-size:16px">⚡</span>
+      <span>낙뢰 위험 <span class="tag">${risk.tag}</span></span>
+      <span class="note">${risk.txt}</span>
+    </div>
+    <div class="sec-title">시간대별 예보 (06–19시) · 종합 최적모델</div>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>시각</th><th></th><th>기온</th><th>강수<br>확률</th><th>강수<br>mm</th><th>바람<br>km/h</th><th>돌풍</th><th>CAPE</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+    <div class="sec-title">기관별 예보 비교 (당일 요약)</div>
+    <div class="tbl-scroll"><table class="src-table">
+      <thead><tr><th>출처</th><th>날씨</th><th>최저/최고</th><th>강수확률</th><th>강수량</th><th>최대풍속</th></tr></thead>
+      <tbody>${srows}</tbody>
+    </table></div>
+    <div class="cardfoot">위치 좌표 ${COURSE.lat}, ${COURSE.lon} · 시간대 Asia/Seoul</div>
+  </div>`;
+}
+
+let nextAt=0;
+function setStatus(state, text){
+  document.getElementById('statusDot').className="dot"+(state==='ok'?'':state==='err'?' err':state==='wait'?' wait':' load');
+  document.getElementById('statusText').textContent=text;
+}
+function tickCountdown(){
+  const el=document.getElementById('nextUpd');
+  if(!nextAt){el.textContent="";return;}
+  const s=Math.max(0,Math.round((nextAt-Date.now())/1000));
+  el.textContent=`· 다음 확인 ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
+}
+
+async function load(){
+  const btn=document.getElementById('refreshBtn'); btn.disabled=true;
+  setStatus('load','불러오는 중…');
+  const mainRes = await fetchMaybe(mainURL());
+  const hasData = mainRes.ok && mainRes.data.hourly &&
+    mainRes.data.hourly.temperature_2m.some(v=>v!=null);
+  if(hasData){
+    const srcRes = await fetchMaybe(srcURL());
+    document.getElementById('card').innerHTML = dataCard(mainRes.data, srcRes.ok?srcRes.data:null);
+    setStatus('ok','업데이트: '+new Date().toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}));
+  }else{
+    document.getElementById('card').innerHTML = waitingCard();
+    setStatus('wait','예보 준비 중 · '+availDateStr()+' 표시 시작');
+  }
+  nextAt=Date.now()+REFRESH_MS;
+  btn.disabled=false;
+}
+
+document.getElementById('availInline').textContent = availDateStr();
+document.getElementById('refreshBtn').addEventListener('click', load);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && Date.now()>=nextAt) load(); });
+setInterval(()=>{ if(Date.now()>=nextAt) load(); }, 15000);
+setInterval(tickCountdown, 1000);
+load();
+</script>
+</body>
+</html>
