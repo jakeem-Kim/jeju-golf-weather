@@ -200,3 +200,17 @@ function srcURL(lat,lon,date){
   const d="temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,weather_code";
   return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=${d}&timezone=Asia%2FSeoul&wind_speed_unit=kmh&start_date=${date}&end_date=${date}&models=${MODELS.map(m=>m.key).join(",")}`;
 }
+
+/* ── 즐겨찾기 (브라우저 localStorage에 저장, 방문자별 개인 목록) ── */
+const FAV_KEY = "golfwx_favorites_v1";
+function getFavorites(){ try{ return JSON.parse(localStorage.getItem(FAV_KEY)) || []; }catch(e){ return []; } }
+function saveFavorites(arr){ try{ localStorage.setItem(FAV_KEY, JSON.stringify(arr)); }catch(e){} }
+function isFavorite(course,date){ return getFavorites().some(f=>f.course===course && f.date===date); }
+function addFavorite(course,date){
+  const a=getFavorites();
+  if(!a.some(f=>f.course===course && f.date===date)){ a.push({course,date,added:Date.now()}); saveFavorites(a); }
+}
+function removeFavorite(course,date){ saveFavorites(getFavorites().filter(f=>!(f.course===course && f.date===date))); }
+
+/* 지도 마커 지역별 색상 */
+const ZONE_COLOR = { "수도권":"#1668c4", "강원":"#0f9a86", "충청":"#c9840a", "영남":"#d43b4a", "호남":"#7a5cd0", "제주":"#d94f97" };

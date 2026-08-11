@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>골프 기상 허브</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <style>
   :root{
     --bg:#eaf0f4; --panel:#ffffff; --panel2:#f2f6fa; --line:#d8e2ea;
@@ -33,15 +35,41 @@
   .hero{margin-bottom:8px}
   .hero .eyebrow{font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent)}
   h1{font-size:30px;margin:6px 0 4px;letter-spacing:-.6px;text-wrap:balance}
-  .hero p{color:var(--muted);font-size:14px;margin:0;max-width:60ch}
-  .section-label{font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin:32px 0 12px}
-  /* 예약된 라운딩 카드 */
+  .hero p{color:var(--muted);font-size:14px;margin:0;max-width:62ch}
+  .section-label{font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin:30px 0 12px;display:flex;align-items:center;gap:8px}
+  .section-label .count{color:var(--accent);font-weight:700}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+  /* 지도 */
+  #map{height:420px;width:100%;background:var(--panel2);z-index:1}
+  @media (max-width:640px){#map{height:330px}}
+  .map-legend{display:flex;flex-wrap:wrap;gap:10px 14px;padding:10px 16px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+  .map-legend span{display:inline-flex;align-items:center;gap:5px}
+  .map-legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .map-fallback{display:none;padding:16px;font-size:13px;color:var(--warn)}
+  .leaflet-popup-content{margin:10px 12px;font-family:inherit}
+  .popup-name{font-size:14px;font-weight:700;color:#152230}
+  .popup-region{font-size:12px;color:#5a6b7d;margin-top:2px}
+  .popup-btn{margin-top:8px;background:#1668c4;color:#fff;border:0;border-radius:8px;padding:6px 12px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit}
+  /* 선택 패널 */
+  .picker{padding:18px 20px}
+  .picker .row{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
+  .field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:180px}
+  .field label{font-size:12px;color:var(--muted);font-weight:600}
+  select,input[type=date]{font:inherit;font-size:14px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--txt)}
+  select:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
+  button.go{font:inherit;font-size:14px;font-weight:700;color:#fff;background:var(--accent);border:0;border-radius:10px;padding:11px 22px;cursor:pointer;min-width:120px}
+  button.go:hover{filter:brightness(1.08)}
+  .sel-note{font-size:12.5px;color:var(--muted);margin-top:12px}
+  .sel-note b{color:var(--accent)}
+  .picker.flash{animation:flash .9s ease}
+  @keyframes flash{0%,100%{background:transparent}30%{background:color-mix(in srgb,var(--accent) 12%,transparent)}}
+  .hint{font-size:12px;color:var(--muted);margin-top:12px}
+  /* 카드(예약/즐겨찾기 공용) */
   .rounds{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
-  a.round{display:block;text-decoration:none;color:inherit;background:var(--panel);border:1px solid var(--line);
-    border-radius:16px;box-shadow:var(--shadow);padding:16px 18px;transition:transform .12s,border-color .12s}
-  a.round:hover{transform:translateY(-2px);border-color:var(--accent)}
+  .round{position:relative;display:block;text-decoration:none;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:16px 18px;transition:transform .12s,border-color .12s}
+  .round:hover{transform:translateY(-2px);border-color:var(--accent)}
   .round .region{font-size:11.5px;color:var(--accent);font-weight:700}
-  .round .cname{font-size:16px;font-weight:700;margin:3px 0 2px;letter-spacing:-.2px}
+  .round .cname{font-size:16px;font-weight:700;margin:3px 0 2px;letter-spacing:-.2px;padding-right:22px}
   .round .rdate{font-size:12.5px;color:var(--muted)}
   .round .peek{display:flex;align-items:center;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
   .round .peek .emo{font-size:30px;line-height:1}
@@ -49,21 +77,12 @@
   .round .peek .d{font-size:12px;color:var(--muted)}
   .round .peek.wait .d{color:var(--warn)}
   .round .go{margin-top:12px;font-size:12.5px;color:var(--accent);font-weight:700}
-  /* 직접 선택 */
-  .picker{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:20px}
-  .picker .row{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end}
-  .field{display:flex;flex-direction:column;gap:6px;flex:1;min-width:190px}
-  .field label{font-size:12px;color:var(--muted);font-weight:600}
-  select,input[type=date]{font:inherit;font-size:14px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);
-    background:var(--panel2);color:var(--txt)}
-  select:focus,input:focus{outline:2px solid var(--accent);outline-offset:1px}
-  button.go{font:inherit;font-size:14px;font-weight:700;color:#fff;background:var(--accent);border:0;border-radius:10px;
-    padding:11px 22px;cursor:pointer;min-width:120px}
-  button.go:hover{filter:brightness(1.08)}
-  .picker .hint{font-size:12px;color:var(--muted);margin-top:12px}
+  .round .fav-x{position:absolute;top:12px;right:12px;width:22px;height:22px;border-radius:50%;border:1px solid var(--line);background:var(--panel2);color:var(--muted);font-size:13px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2}
+  .round .fav-x:hover{color:var(--danger);border-color:var(--danger)}
+  .empty-fav{background:var(--panel);border:1px dashed var(--line);border-radius:14px;padding:20px;font-size:13px;color:var(--muted);text-align:center}
+  .empty-fav b{color:var(--txt)}
   .footnote{margin-top:30px;font-size:12px;color:var(--muted);line-height:1.7}
   .footnote b{color:var(--txt)}
-  a.inline{color:var(--accent)}
 </style>
 </head>
 <body>
@@ -71,81 +90,143 @@
   <div class="hero">
     <div class="eyebrow">⛳ Golf Weather Hub</div>
     <h1>골프 기상 허브</h1>
-    <p>전국 주요 골프장과 라운딩 날짜를 고르면, 기상청·일본기상청·독일 DWD·미국 NOAA 예보를 한 화면에서 비교하는 상세 대시보드로 이동합니다. 30분마다 자동 갱신됩니다.</p>
+    <p>지도에서 골프장을 찍거나 목록에서 고르고 날짜를 선택하면, 기상청·일본기상청·독일 DWD·미국 NOAA 예보를 비교하는 상세 대시보드로 이동합니다. 확인한 예보는 ⭐즐겨찾기로 이 화면에 모아둘 수 있습니다.</p>
   </div>
+
+  <div class="section-label">🗺️ 지도·목록에서 선택 <span class="count" id="courseCount"></span></div>
+  <div class="panel">
+    <div id="map"></div>
+    <div class="map-fallback" id="mapFallback">⚠️ 지도를 불러오지 못했습니다(네트워크). 아래 목록에서 골프장을 선택하세요.</div>
+    <div class="map-legend" id="mapLegend"></div>
+    <div class="picker" id="picker">
+      <div class="row">
+        <div class="field">
+          <label for="selCourse">골프장</label>
+          <select id="selCourse"></select>
+        </div>
+        <div class="field" style="max-width:200px">
+          <label for="selDate">라운딩 날짜</label>
+          <input type="date" id="selDate">
+        </div>
+        <button class="go" id="goBtn">예보 보기 →</button>
+      </div>
+      <div class="sel-note" id="selNote">지도 마커를 클릭하거나 목록에서 골프장을 선택하세요.</div>
+      <div class="hint">날짜는 <b>오늘부터 30일 뒤까지</b> 선택 가능합니다. 예보 원본은 발표일 기준 약 16일까지 제공되며, 그보다 먼 날짜는 상세 페이지에서 "예보 준비 중"으로 표시되다 범위에 들어오면 자동으로 채워집니다.</div>
+    </div>
+  </div>
+
+  <div class="section-label">⭐ 내 즐겨찾기 <span class="count" id="favCount"></span></div>
+  <div id="favWrap"></div>
 
   <div class="section-label">📌 예약된 라운딩</div>
   <div class="rounds" id="rounds"></div>
 
-  <div class="section-label">🔎 골프장 · 날짜 직접 선택</div>
-  <div class="picker">
-    <div class="row">
-      <div class="field">
-        <label for="selCourse">골프장</label>
-        <select id="selCourse"></select>
-      </div>
-      <div class="field">
-        <label for="selDate">라운딩 날짜</label>
-        <input type="date" id="selDate">
-      </div>
-      <button class="go" id="goBtn">예보 보기 →</button>
-    </div>
-    <div class="hint">날짜는 <b>오늘부터 30일 뒤까지</b> 선택할 수 있습니다. 예보 원본 데이터는 발표일 기준 약 16일까지 제공되며, 그보다 먼 날짜는 상세 페이지에서 "예보 준비 중"으로 표시되다가 범위에 들어오면 자동으로 채워집니다.</div>
-  </div>
-
   <div class="footnote">
-    <b>데이터 출처</b> · 모든 예보는 <b>Open-Meteo</b>를 통해 각 기관의 원본 모델(🇰🇷기상청 KMA · 🇯🇵일본기상청 JMA · 🇩🇪독일 DWD · 🇺🇸미국 NOAA)에서 실시간 수신합니다.<br>
-    새 골프장을 추가하려면 <b>courses.js</b>의 <span style="font-family:monospace">GOLF_COURSES</span> 목록에 좌표를 넣으면 허브와 상세 페이지에 자동 반영됩니다.
+    <b>데이터 출처</b> · 예보는 <b>Open-Meteo</b>를 통해 각 기관 원본 모델(🇰🇷기상청 KMA · 🇯🇵일본기상청 JMA · 🇩🇪독일 DWD · 🇺🇸미국 NOAA)에서 실시간 수신합니다. 지도 타일 © OpenStreetMap 기여자.<br>
+    즐겨찾기는 이 브라우저에만 저장됩니다(개인 목록). 새 골프장은 <b>courses.js</b>의 <span style="font-family:monospace">GOLF_COURSES</span>에 좌표를 추가하면 지도·목록에 자동 반영됩니다.
   </div>
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script src="courses.js"></script>
 <script>
-/* 드롭다운 채우기 (지역 그룹) */
+const ymd = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+String(d.getDate()).padStart(2,'0');
+const today = new Date(); today.setHours(0,0,0,0);
+
+/* ── 드롭다운 (지역 그룹 · 가나다순) ── */
 const sel = document.getElementById('selCourse');
+document.getElementById('courseCount').textContent = `${GOLF_COURSES.length}곳`;
 ZONE_ORDER.forEach(zone=>{
   const list = GOLF_COURSES.filter(c=>c.zone===zone).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
   if(!list.length) return;
   const og=document.createElement('optgroup'); og.label=`${zone} (${list.length})`;
-  list.forEach(c=>{
-    const o=document.createElement('option'); o.value=c.id; o.textContent=`${c.name} · ${c.region}`; og.appendChild(o);
-  });
+  list.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=`${c.name} · ${c.region}`; og.appendChild(o); });
   sel.appendChild(og);
 });
-/* 날짜: 오늘 ~ 30일 뒤까지 선택 가능 (로컬 KST 기준) */
-const ymd = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+String(d.getDate()).padStart(2,'0');
+
+/* ── 날짜 (오늘 ~ 30일) ── */
 const dateInput = document.getElementById('selDate');
-const today = new Date(); today.setHours(0,0,0,0);
 dateInput.min = ymd(today);
 dateInput.max = ymd(new Date(today.getTime()+30*86400000));
 dateInput.value = (PRESET_ROUNDS.map(r=>r.date).sort().find(d=>new Date(d+"T00:00:00")>=today)) || ymd(new Date(today.getTime()+86400000));
 
+/* ── 선택 상태 ── */
+function updateSelNote(){
+  const c=courseById(sel.value);
+  document.getElementById('selNote').innerHTML = c ? `선택됨: <b>${c.name}</b> · ${c.region}` : '골프장을 선택하세요.';
+}
 document.getElementById('goBtn').addEventListener('click', ()=>{
   const course=sel.value, date=dateInput.value;
+  if(!course){ sel.focus(); return; }
   if(!date){ dateInput.focus(); return; }
   location.href=`detail.html?course=${encodeURIComponent(course)}&date=${date}`;
 });
 
-/* 예약 라운딩 카드 렌더 + 라이브 미리보기 */
-const wrap = document.getElementById('rounds');
-PRESET_ROUNDS.forEach(r=>{
-  const c = courseById(r.course); if(!c) return;
-  const a = document.createElement('a');
-  a.className='round'; a.href=`detail.html?course=${c.id}&date=${r.date}`;
+/* ── 지도 ── */
+let markerById = {};
+function initMap(){
+  if(typeof L === 'undefined'){ document.getElementById('map').style.display='none'; document.getElementById('mapFallback').style.display='block'; return; }
+  const map = L.map('map',{scrollWheelZoom:false, minZoom:6}).setView([36.4,127.9], 7);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    maxZoom:16, attribution:'© OpenStreetMap'
+  }).addTo(map);
+  map.on('click', ()=>{}); // 여백 클릭은 무시
+  GOLF_COURSES.forEach(c=>{
+    const m = L.circleMarker([c.lat,c.lon],{
+      radius:6, color:'#ffffff', weight:1.5, fillColor:ZONE_COLOR[c.zone]||'#1668c4', fillOpacity:.9
+    }).addTo(map);
+    m.bindTooltip(c.name,{direction:'top',offset:[0,-4]});
+    m.on('click', ()=>{ selectFromMap(c.id, m, map); });
+    markerById[c.id]=m;
+  });
+  // 드롭다운 변경 시 지도 동기화
+  sel.addEventListener('change', ()=>{ const c=courseById(sel.value); if(c && markerById[c.id]){ highlight(c.id); map.panTo([c.lat,c.lon]); markerById[c.id].openTooltip(); } updateSelNote(); });
+  window._golfMap = map;
+}
+let selectedId=null;
+function highlight(id){
+  if(selectedId && markerById[selectedId]) markerById[selectedId].setStyle({radius:6, weight:1.5, color:'#ffffff'});
+  const m=markerById[id]; if(m) m.setStyle({radius:9, weight:3, color:'#152230'});
+  selectedId=id;
+}
+function selectFromMap(id, marker, map){
+  sel.value=id; highlight(id); updateSelNote();
+  const c=courseById(id);
+  const el=document.createElement('div');
+  el.innerHTML=`<div class="popup-name">${c.name}</div><div class="popup-region">${c.region} · ${c.addr}</div>`;
+  const btn=document.createElement('button'); btn.className='popup-btn'; btn.textContent='이 골프장으로 예보 보기 →';
+  btn.onclick=()=>{ location.href=`detail.html?course=${c.id}&date=${dateInput.value}`; };
+  el.appendChild(btn);
+  marker.bindPopup(el).openPopup();
+  const p=document.getElementById('picker'); p.classList.remove('flash'); void p.offsetWidth; p.classList.add('flash');
+}
+
+/* ── 지도 범례 ── */
+const legend=document.getElementById('mapLegend');
+ZONE_ORDER.forEach(z=>{ const n=GOLF_COURSES.filter(c=>c.zone===z).length; if(!n)return;
+  const s=document.createElement('span'); s.innerHTML=`<i style="background:${ZONE_COLOR[z]}"></i>${z} ${n}`; legend.appendChild(s); });
+
+/* ── 카드 렌더 공용 (예약 라운딩 / 즐겨찾기) ── */
+function makeCard(c, date, {removable=false}={}){
+  const a=document.createElement('a');
+  a.className='round'; a.href=`detail.html?course=${c.id}&date=${date}`;
   a.innerHTML = `<div class="region">${c.region}</div>
     <div class="cname">${c.name}</div>
-    <div class="rdate">📅 ${r.date.replaceAll('-','.')} (${weekday(r.date)})</div>
-    <div class="peek" id="peek-${c.id}-${r.date.replaceAll('-','')}"><span class="d">예보 확인 중…</span></div>
+    <div class="rdate">📅 ${date.replaceAll('-','.')} (${weekday(date)})</div>
+    <div class="peek"><span class="d">예보 확인 중…</span></div>
     <div class="go">상세 예보 보기 →</div>`;
-  wrap.appendChild(a);
-  loadPeek(c, r.date);
-});
-
-async function loadPeek(c, date){
-  const el = document.getElementById(`peek-${c.id}-${date.replaceAll('-','')}`);
+  if(removable){
+    const x=document.createElement('button'); x.className='fav-x'; x.textContent='✕'; x.title='즐겨찾기 삭제';
+    x.onclick=(e)=>{ e.preventDefault(); e.stopPropagation(); removeFavorite(c.id,date); renderFavorites(); };
+    a.appendChild(x);
+  }
+  loadPeek(a.querySelector('.peek'), c, date);
+  return a;
+}
+async function loadPeek(el, c, date){
   if(daysUntil(date) > 16){
-    el.className='peek wait'; el.innerHTML=`<span class="emo">🗓️</span><span class="d">예보 준비 중<br>${availDateStr(date)}부터</span>`;
-    return;
+    el.className='peek wait'; el.innerHTML=`<span class="emo">🗓️</span><span class="d">예보 준비 중<br>${availDateStr(date)}부터</span>`; return;
   }
   const res = await fetchMaybe(mainURL(c.lat,c.lon,date));
   if(res.ok && res.data.hourly && res.data.hourly.temperature_2m.some(v=>v!=null)){
@@ -154,9 +235,33 @@ async function loadPeek(c, date){
     const [dsc,emo]=wmo(H.weather_code[mid]);
     el.innerHTML=`<span class="emo">${emo}</span><span class="t">${fmt(H.temperature_2m[mid],0)}°</span><span class="d">${dsc}<br>13시 기준</span>`;
   }else{
-    el.className='peek wait'; el.innerHTML=`<span class="emo">🗓️</span><span class="d">예보 준비 중<br>${daysUntil(date)<0?'지난 날짜':availDateStr(date)+'부터'}</span>`;
+    el.className='peek wait'; el.innerHTML=`<span class="emo">🗓️</span><span class="d">${daysUntil(date)<0?'지난 날짜':'예보 준비 중'}</span>`;
   }
 }
+
+/* ── 예약된 라운딩 ── */
+const roundsWrap=document.getElementById('rounds');
+PRESET_ROUNDS.forEach(r=>{ const c=courseById(r.course); if(c) roundsWrap.appendChild(makeCard(c, r.date)); });
+
+/* ── 즐겨찾기 ── */
+function renderFavorites(){
+  const wrap=document.getElementById('favWrap');
+  const favs=getFavorites().filter(f=>courseById(f.course)).sort((a,b)=>a.date.localeCompare(b.date));
+  document.getElementById('favCount').textContent = favs.length ? `${favs.length}개` : '';
+  wrap.innerHTML='';
+  if(!favs.length){
+    wrap.innerHTML=`<div class="empty-fav">아직 즐겨찾기가 없습니다. 상세 예보 페이지에서 <b>⭐ 즐겨찾기</b>를 누르면 여기에 카드로 모입니다.</div>`;
+    return;
+  }
+  const grid=document.createElement('div'); grid.className='rounds';
+  favs.forEach(f=>{ grid.appendChild(makeCard(courseById(f.course), f.date, {removable:true})); });
+  wrap.appendChild(grid);
+}
+
+/* ── 초기화 ── */
+initMap();
+updateSelNote();
+renderFavorites();
 </script>
 </body>
 </html>

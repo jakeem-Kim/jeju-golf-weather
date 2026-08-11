@@ -40,6 +40,8 @@
   .dot.err{background:var(--danger)} .dot.load{background:var(--warn)} .dot.wait{background:var(--accent)}
   button.refresh{background:var(--accent);color:#fff;border:0;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer}
   button.refresh:disabled{opacity:.55;cursor:default}
+  button.favbtn{background:var(--panel2);color:var(--muted);border:1px solid var(--line);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer}
+  button.favbtn.on{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn);border-color:var(--warn)}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;margin-top:18px}
   .card h2{margin:0;font-size:18px;letter-spacing:-.2px}
   .card-head{padding:18px 20px 15px;background:linear-gradient(180deg,var(--panel2),transparent);border-bottom:1px solid var(--line)}
@@ -94,6 +96,7 @@
       <span class="dot load" id="statusDot"></span>
       <span id="statusText">불러오는 중…</span>
       <span id="nextUpd"></span>
+      <button class="favbtn" id="favBtn" style="display:none">☆ 즐겨찾기</button>
       <button class="refresh" id="refreshBtn">새로고침</button>
     </div>
   </header>
@@ -118,10 +121,24 @@ const REFRESH_MS = 30*60*1000;
 /* URL 파라미터 → 코스/날짜 결정 */
 const p = new URLSearchParams(location.search);
 let COURSE = courseById(p.get('course'));
+const COURSE_ID = COURSE ? p.get('course') : null;
 if(!COURSE && p.get('lat') && p.get('lon')){
   COURSE = { name:p.get('name')||'선택한 코스', addr:p.get('addr')||'', lat:+p.get('lat'), lon:+p.get('lon'), region:'' };
 }
 const DATE = p.get('date');
+
+function setupFavButton(){
+  if(!COURSE_ID) return;             // 등록된 골프장만 즐겨찾기 가능
+  const btn=document.getElementById('favBtn');
+  btn.style.display='';
+  const paint=()=>{ const on=isFavorite(COURSE_ID,DATE);
+    btn.classList.toggle('on',on); btn.textContent=(on?'★ 즐겨찾기됨':'☆ 즐겨찾기'); };
+  paint();
+  btn.addEventListener('click', ()=>{
+    if(isFavorite(COURSE_ID,DATE)) removeFavorite(COURSE_ID,DATE); else addFavorite(COURSE_ID,DATE);
+    paint();
+  });
+}
 
 function invalid(msg){
   document.getElementById('card').innerHTML =
@@ -270,6 +287,7 @@ else if(!DATE){ invalid('날짜가 지정되지 않았습니다'); }
 else{
   document.title = `${COURSE.name} · ${DATE.replaceAll('-','.')} 기상`;
   document.getElementById('pageTitle').textContent = `⛳ ${COURSE.name}`;
+  setupFavButton();
   document.getElementById('refreshBtn').addEventListener('click', load);
   document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && Date.now()>=nextAt) load(); });
   setInterval(()=>{ if(Date.now()>=nextAt) load(); }, 15000);
