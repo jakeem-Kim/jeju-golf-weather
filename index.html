@@ -71,7 +71,7 @@
   <div class="hero">
     <div class="eyebrow">⛳ Golf Weather Hub</div>
     <h1>골프 기상 허브</h1>
-    <p>골프장과 라운딩 날짜를 고르면, 기상청·일본기상청·독일 DWD·미국 NOAA 예보를 한 화면에서 비교하는 상세 대시보드로 이동합니다. 30분마다 자동 갱신됩니다.</p>
+    <p>전국 주요 골프장과 라운딩 날짜를 고르면, 기상청·일본기상청·독일 DWD·미국 NOAA 예보를 한 화면에서 비교하는 상세 대시보드로 이동합니다. 30분마다 자동 갱신됩니다.</p>
   </div>
 
   <div class="section-label">📌 예약된 라운딩</div>
@@ -90,7 +90,7 @@
       </div>
       <button class="go" id="goBtn">예보 보기 →</button>
     </div>
-    <div class="hint">예보는 발표일 기준 약 16일까지 제공됩니다. 더 먼 날짜는 상세 페이지에서 "예보 준비 중"으로 표시되며, 범위에 들어오면 자동으로 채워집니다.</div>
+    <div class="hint">날짜는 <b>오늘부터 30일 뒤까지</b> 선택할 수 있습니다. 예보 원본 데이터는 발표일 기준 약 16일까지 제공되며, 그보다 먼 날짜는 상세 페이지에서 "예보 준비 중"으로 표시되다가 범위에 들어오면 자동으로 채워집니다.</div>
   </div>
 
   <div class="footnote">
@@ -101,16 +101,24 @@
 
 <script src="courses.js"></script>
 <script>
-/* 드롭다운 채우기 */
+/* 드롭다운 채우기 (지역 그룹) */
 const sel = document.getElementById('selCourse');
-GOLF_COURSES.forEach(c=>{
-  const o=document.createElement('option'); o.value=c.id; o.textContent=`${c.name} (${c.region})`; sel.appendChild(o);
+ZONE_ORDER.forEach(zone=>{
+  const list = GOLF_COURSES.filter(c=>c.zone===zone);
+  if(!list.length) return;
+  const og=document.createElement('optgroup'); og.label=`${zone} (${list.length})`;
+  list.forEach(c=>{
+    const o=document.createElement('option'); o.value=c.id; o.textContent=`${c.name} · ${c.region}`; og.appendChild(o);
+  });
+  sel.appendChild(og);
 });
-/* 날짜 기본값: 가장 가까운 예약 라운딩 또는 오늘+1 */
+/* 날짜: 오늘 ~ 30일 뒤까지 선택 가능 (로컬 KST 기준) */
+const ymd = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+String(d.getDate()).padStart(2,'0');
 const dateInput = document.getElementById('selDate');
 const today = new Date(); today.setHours(0,0,0,0);
-dateInput.min = new Date(today.getTime()-2*86400000).toISOString().slice(0,10);
-dateInput.value = (PRESET_ROUNDS.map(r=>r.date).sort().find(d=>new Date(d)>=today)) || new Date(today.getTime()+86400000).toISOString().slice(0,10);
+dateInput.min = ymd(today);
+dateInput.max = ymd(new Date(today.getTime()+30*86400000));
+dateInput.value = (PRESET_ROUNDS.map(r=>r.date).sort().find(d=>new Date(d+"T00:00:00")>=today)) || ymd(new Date(today.getTime()+86400000));
 
 document.getElementById('goBtn').addEventListener('click', ()=>{
   const course=sel.value, date=dateInput.value;
