@@ -49,6 +49,8 @@ const GOLF_COURSES = [
   { id:"club72",    name:"클럽72(스카이72)",  zone:"수도권", region:"인천 중구", addr:"인천 중구 영종도", lat:37.49, lon:126.55 },
   { id:"nicklaus",  name:"잭니클라우스GC코리아",zone:"수도권", region:"인천 연수", addr:"인천 연수구 송도동", lat:37.38, lon:126.64 },
   { id:"verthill",  name:"베르힐 영종 CC",    zone:"수도권", region:"인천 영종도", addr:"인천 중구 한상중앙로 66 · 서해안 임해", lat:37.525, lon:126.530 },
+  { id:"yeojusun",  name:"여주썬밸리CC",      zone:"수도권", region:"경기 여주", addr:"여주시 강천면 강문로 872", lat:37.33, lon:127.70 },
+  { id:"iljuksun",  name:"일죽썬밸리CC",      zone:"수도권", region:"경기 안성", addr:"안성시 일죽면", lat:37.10, lon:127.55 },
   { id:"gapyeongbenest",name:"가평베네스트GC",zone:"수도권", region:"경기 가평", addr:"가평군 상면 둔덕말길 232", lat:37.74, lon:127.40 },
   { id:"incheonintl",name:"인천국제CC",       zone:"수도권", region:"인천 서구", addr:"인천 서구 경서동", lat:37.55, lon:126.63 },
   { id:"jaeil",     name:"제일CC",            zone:"수도권", region:"경기 안산", addr:"안산시 상록구 부곡동", lat:37.32, lon:126.87 },
@@ -61,6 +63,7 @@ const GOLF_COURSES = [
 
   /* ── 강원 ── */
   { id:"whistling", name:"휘슬링락CC",        zone:"강원", region:"춘천", addr:"춘천시 남산면 동촌로 501", lat:37.78, lon:127.56 },
+  { id:"seoraksun", name:"설악썬밸리CC",      zone:"강원", region:"고성", addr:"고성군 죽왕면 순포로 188", lat:38.30, lon:128.53 },
   { id:"oakvalley", name:"오크밸리CC",        zone:"강원", region:"원주", addr:"원주시 지정면", lat:37.42, lon:127.83 },
   { id:"oakhills",  name:"오크힐스CC",        zone:"강원", region:"원주", addr:"원주시 문막읍", lat:37.30, lon:127.82 },
   { id:"jade",      name:"제이드팰리스GC",    zone:"강원", region:"춘천", addr:"춘천시 남산면", lat:37.79, lon:127.58 },
@@ -83,7 +86,6 @@ const GOLF_COURSES = [
   { id:"kingsdale", name:"킹스데일GC",        zone:"충청", region:"충북 음성", addr:"음성군 원남면", lat:36.90, lon:127.60 },
   { id:"grand",     name:"그랜드CC",          zone:"충청", region:"충북 청주", addr:"청주시 상당구 낭성면", lat:36.60, lon:127.57 },
   { id:"cheongju",  name:"청주CC",            zone:"충청", region:"충북 청주", addr:"청주시 상당구", lat:36.63, lon:127.52 },
-  { id:"silkriver", name:"실크리버CC",        zone:"충청", region:"충북 청주", addr:"청주시 청원구", lat:36.72, lon:127.48 },
   { id:"greenhill", name:"그린힐CC",          zone:"충청", region:"충북 진천", addr:"진천군 초평면", lat:36.86, lon:127.48 },
   { id:"players",   name:"더플레이어스GC",    zone:"충청", region:"충북 진천", addr:"진천군 문백면", lat:36.82, lon:127.42 },
   { id:"plazacc",   name:"프라자CC(제천)",    zone:"충청", region:"충북 제천", addr:"제천시 백운면", lat:37.10, lon:128.02 },
