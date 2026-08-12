@@ -90,7 +90,7 @@
   <div class="hero">
     <div class="eyebrow">⛳ Golf Weather Hub</div>
     <h1>골프 기상 허브</h1>
-    <p>지도에서 골프장을 찍거나 목록에서 고르고 날짜를 선택하면, 기상청·일본기상청·독일 DWD·미국 NOAA 예보를 비교하는 상세 대시보드로 이동합니다. 확인한 예보는 ⭐즐겨찾기로 이 화면에 모아둘 수 있습니다.</p>
+    <p>지도에서 골프장을 찍거나 목록에서 고르고 날짜를 선택하면, 기상청·일본기상청·유럽 ECMWF·미국 NOAA 등 8개 기관 예보를 비교하는 상세 대시보드로 이동합니다. 확인한 예보는 ⭐즐겨찾기로 이 화면에 모아둘 수 있습니다.</p>
   </div>
 
   <div class="section-label">🗺️ 지도·목록에서 선택 <span class="count" id="courseCount"></span></div>
@@ -122,14 +122,14 @@
   <div class="rounds" id="rounds"></div>
 
   <div class="footnote">
-    <b>데이터 출처</b> · 예보는 <b>Open-Meteo</b>를 통해 각 기관 원본 모델(🇰🇷기상청 KMA · 🇯🇵일본기상청 JMA · 🇩🇪독일 DWD · 🇺🇸미국 NOAA)에서 실시간 수신합니다. 지도 타일 © OpenStreetMap 기여자.<br>
+    <b>데이터 출처</b> · 예보는 <b>Open-Meteo</b>를 통해 각 기관 원본 모델(🇰🇷기상청 KMA · 🇯🇵일본기상청 JMA · 🇪🇺유럽 ECMWF · 🇩🇪독일 DWD · 🇺🇸미국 NOAA · 🇫🇷메테오프랑스 · 🇬🇧영국 UKMO · 🇳🇴노르웨이 MET)에서 실시간 수신합니다. 지도 타일 © OpenStreetMap 기여자.<br>
     즐겨찾기는 이 브라우저에만 저장됩니다(개인 목록). 새 골프장은 <b>courses.js</b>의 <span style="font-family:monospace">GOLF_COURSES</span>에 좌표를 추가하면 지도·목록에 자동 반영됩니다.
   </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="courses.js?v=2"></script>
+<script src="courses.js?v=3"></script>
 <script>
 const ymd = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+String(d.getDate()).padStart(2,'0');
 const today = new Date(); today.setHours(0,0,0,0);

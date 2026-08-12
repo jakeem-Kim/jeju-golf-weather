@@ -162,10 +162,14 @@ const ZONE_ORDER = ["수도권","강원","충청","영남","호남","제주"];
 function courseById(id){ return GOLF_COURSES.find(c=>c.id===id) || null; }
 
 const MODELS = [
-  { key:"kma_seamless",  label:"기상청 KMA",   flag:"🇰🇷" },
-  { key:"jma_seamless",  label:"일본기상청 JMA", flag:"🇯🇵" },
-  { key:"icon_seamless", label:"독일 DWD",     flag:"🇩🇪" },
-  { key:"gfs_seamless",  label:"미국 NOAA",    flag:"🇺🇸" }
+  { key:"kma_seamless",   label:"기상청 KMA",    flag:"🇰🇷" },
+  { key:"jma_seamless",   label:"일본기상청 JMA",  flag:"🇯🇵" },
+  { key:"ecmwf_ifs025",   label:"유럽 ECMWF",    flag:"🇪🇺" },
+  { key:"icon_seamless",  label:"독일 DWD",      flag:"🇩🇪" },
+  { key:"gfs_seamless",   label:"미국 NOAA",     flag:"🇺🇸" },
+  { key:"meteofrance_seamless", label:"메테오프랑스", flag:"🇫🇷" },
+  { key:"ukmo_seamless",  label:"영국 UKMO",     flag:"🇬🇧" },
+  { key:"metno_seamless", label:"노르웨이 MET",   flag:"🇳🇴" }
 ];
 const PLAY_HOURS = [6,7,8,9,10,11,12,13,14,15,16,17,18,19];
 
