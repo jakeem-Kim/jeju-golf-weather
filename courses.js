@@ -8,7 +8,7 @@ const GOATCOUNTER_CODE = "jakeem";   // 대시보드: https://jakeem.goatcounter
 (function loadAnalytics(){
   if(!GOATCOUNTER_CODE) return;
   var s=document.createElement('script');
-  s.async=true; s.src="//gs.goatcounter.com/count.js";
+  s.async=true; s.src="//gc.zgo.at/count.js";
   s.setAttribute('data-goatcounter', "https://"+GOATCOUNTER_CODE+".goatcounter.com/count");
   (document.head||document.documentElement).appendChild(s);
 })();
