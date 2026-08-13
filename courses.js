@@ -1,5 +1,18 @@
 /* ===== 골프 기상 허브 · 공통 데이터 & 로직 ===== */
 
+/* ── 접속 통계 (GoatCounter · 쿠키 없음) ──
+   goatcounter.com 가입 후 정한 코드(subdomain)를 아래에 넣으면 index/detail 모든 페이지에서 자동 집계됩니다.
+   예) 코드가 "jejugolf" 이면 대시보드는 https://jejugolf.goatcounter.com 에서 확인.
+   값이 비어 있으면(=미설정) 통계는 비활성 상태로 아무 것도 로드하지 않습니다. */
+const GOATCOUNTER_CODE = "jakeem";   // 대시보드: https://jakeem.goatcounter.com
+(function loadAnalytics(){
+  if(!GOATCOUNTER_CODE) return;
+  var s=document.createElement('script');
+  s.async=true; s.src="//gs.goatcounter.com/count.js";
+  s.setAttribute('data-goatcounter', "https://"+GOATCOUNTER_CODE+".goatcounter.com/count");
+  (document.head||document.documentElement).appendChild(s);
+})();
+
 /* 등록된 골프장 (여기에 추가하면 허브 드롭다운·상세 페이지에 자동 반영)
    zone: 지역 그룹 / lat·lon: 기상모델(약 11km)용 시·군·읍 단위 좌표(코스 위치 근사) */
 const GOLF_COURSES = [
