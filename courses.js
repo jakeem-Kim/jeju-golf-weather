@@ -4,6 +4,10 @@
    zone: 지역 그룹 / lat·lon: 기상모델(약 11km)용 시·군·읍 단위 좌표(코스 위치 근사) */
 const GOLF_COURSES = [
   /* ── 수도권 (서울·경기·인천) ── */
+  { id:"gzeaglemont",name:"골프존카운티 이글몬트",zone:"수도권", region:"경기 안성", addr:"안성시 보개면 보삼로 106", lat:37.03, lon:127.30 },
+  { id:"gzanseongh",name:"골프존카운티 안성H",  zone:"수도권", region:"경기 안성", addr:"안성시 보개면 보삼로 302", lat:37.03, lon:127.31 },
+  { id:"gzanseongw",name:"골프존카운티 안성W",  zone:"수도권", region:"경기 안성", addr:"안성시 양성면 동향리", lat:37.08, lon:127.20 },
+  { id:"gzsongdo",  name:"골프존카운티 송도",   zone:"수도권", region:"인천 연수", addr:"인천 연수구 인천신항대로 1120", lat:37.36, lon:126.62 },
   { id:"hanyang",   name:"한양CC",            zone:"수도권", region:"경기 고양", addr:"고양시 덕양구", lat:37.66, lon:126.83 },
   { id:"newkorea",  name:"뉴코리아CC",        zone:"수도권", region:"경기 고양", addr:"고양시 덕양구 오금동", lat:37.68, lon:126.85 },
   { id:"taereung",  name:"태릉CC",            zone:"수도권", region:"서울 노원", addr:"서울 노원구 공릉동", lat:37.62, lon:127.09 },
@@ -81,6 +85,9 @@ const GOLF_COURSES = [
   { id:"shinedale", name:"샤인데일GC",        zone:"강원", region:"양양", addr:"양양군 손양면", lat:38.03, lon:128.60 },
 
   /* ── 충청 (충북·충남·대전·세종) ── */
+  { id:"gzjincheon",name:"골프존카운티 진천",   zone:"충청", region:"충북 진천", addr:"진천군 진천읍 송강로 783-51", lat:36.87, lon:127.44 },
+  { id:"gzhwarang", name:"골프존카운티 화랑",   zone:"충청", region:"충북 진천", addr:"진천군 문백면 농다리로 809", lat:36.82, lon:127.42 },
+  { id:"gzcheonan", name:"골프존카운티 천안",   zone:"충청", region:"충남 천안", addr:"천안시 동남구 병천면 매성2길 103", lat:36.75, lon:127.35 },
   { id:"rainbow",   name:"레인보우힐스CC",    zone:"충청", region:"충북 음성", addr:"음성군 삼성면", lat:36.99, lon:127.54 },
   { id:"tgv",       name:"떼제베CC",          zone:"충청", region:"충북 음성", addr:"음성군 생극면", lat:37.03, lon:127.63 },
   { id:"kingsdale", name:"킹스데일GC",        zone:"충청", region:"충북 음성", addr:"음성군 원남면", lat:36.90, lon:127.60 },
@@ -113,6 +120,11 @@ const GOLF_COURSES = [
   { id:"edinburghgs",name:"금산 에딘버러CC",  zone:"충청", region:"충남 금산", addr:"금산군 진산면 살구정길 167", lat:36.15, lon:127.35 },
 
   /* ── 영남 (경상·부산·대구·울산) ── */
+  { id:"gzsacheon", name:"골프존카운티 사천",   zone:"영남", region:"경남 사천", addr:"사천시 서포면 구송로 151", lat:35.02, lon:128.00 },
+  { id:"gzgampo",   name:"골프존카운티 감포",   zone:"영남", region:"경북 경주", addr:"경주시 감포읍 동해안로 1819-59", lat:35.83, lon:129.50 },
+  { id:"gzcheongtong",name:"골프존카운티 청통", zone:"영남", region:"경북 영천", addr:"영천시 청통면 청통로 733", lat:36.00, lon:128.78 },
+  { id:"gzthegolf", name:"골프존카운티 더골프", zone:"영남", region:"울산 울주", addr:"울주군 서생면 용연길 206-52", lat:35.32, lon:129.28 },
+  { id:"gzgumi",    name:"골프존카운티 구미",   zone:"영남", region:"경북 구미", addr:"구미시 산동읍 강동로 953-73 (선산)", lat:36.18, lon:128.42 },
   { id:"busan",     name:"부산CC",            zone:"영남", region:"경남 양산", addr:"양산시 동면", lat:35.35, lon:129.10 },
   { id:"dongrae",   name:"동래베네스트GC",    zone:"영남", region:"부산", addr:"부산 금정구 오륜동", lat:35.27, lon:129.11 },
   { id:"asiad",     name:"아시아드CC",        zone:"영남", region:"부산", addr:"부산 강서구 오리", lat:35.16, lon:128.94 },
@@ -127,6 +139,9 @@ const GOLF_COURSES = [
   { id:"andong",    name:"안동CC",            zone:"영남", region:"경북 안동", addr:"안동시 남후면", lat:36.51, lon:128.68 },
 
   /* ── 호남 (전라·광주) ── */
+  { id:"gzyeongam", name:"골프존카운티 영암45", zone:"호남", region:"전남 영암", addr:"영암군 삼호읍 에프원로 121-1", lat:34.76, lon:126.42 },
+  { id:"gzdragon",  name:"골프존카운티 드래곤", zone:"호남", region:"전북 남원", addr:"남원시 대산면 대사로 500", lat:35.42, lon:127.30 },
+  { id:"gzmuju",    name:"골프존카운티 무주",   zone:"호남", region:"전북 무주", addr:"무주군 안성면 장무로 1537-21", lat:35.92, lon:127.62 },
   { id:"gwangju",   name:"광주CC",            zone:"호남", region:"광주", addr:"광주 광산구 삼거동", lat:35.22, lon:126.72 },
   { id:"pinehills", name:"파인힐스CC",        zone:"호남", region:"광주", addr:"광주 광산구", lat:35.20, lon:126.70 },
   { id:"mudeung",   name:"무등산CC",          zone:"호남", region:"전남 담양", addr:"담양군 대전면", lat:35.25, lon:126.98 },
