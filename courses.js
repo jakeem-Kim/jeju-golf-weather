@@ -189,8 +189,20 @@ const ZONE_ORDER = ["수도권","강원","충청","영남","호남","제주"];
 
 function courseById(id){ return GOLF_COURSES.find(c=>c.id===id) || null; }
 
+/* ────────────────────────────────────────────────────────────
+   기상청(KMA) 공식 단기예보 API 설정
+   ─────────────────────────────────────────────────────────────
+   Open-Meteo는 기상청이 2026년 3월 말 UM→KIM 모델로 교체한 이후
+   KMA 재제공을 중단했습니다(kma_seamless 응답이 전부 null).
+   그래서 기상청 데이터는 공식 API(data.go.kr 단기예보 조회서비스,
+   VilageFcstInfoService_2.0/getVilageFcst)에서 직접 가져옵니다.
+   ※ 정적 사이트라 키가 브라우저에 노출됩니다. 무료 트래픽 키이며,
+     필요하면 data.go.kr에서 사용량/도메인 제한 설정을 권장합니다.
+   ※ 아래에는 반드시 "일반 인증키(Decoding)" 값을 넣습니다.        */
+const KMA_SERVICE_KEY = "J18NfUWnaXzo/5CnJV9SPhvqxiQVJA/4+LUTjkD+cuz7bHg+bap7JKKidPTlXlQbXoxTPmJg21W9YPqePCrS0Q==";
+
 const MODELS = [
-  { key:"kma_seamless",   label:"기상청 KMA",    flag:"🇰🇷" },
+  { key:"kma",            label:"기상청 KMA",    flag:"🇰🇷", official:true },
   { key:"jma_seamless",   label:"일본기상청 JMA",  flag:"🇯🇵" },
   { key:"ecmwf_ifs025",   label:"유럽 ECMWF",    flag:"🇪🇺" },
   { key:"icon_seamless",  label:"독일 DWD",      flag:"🇩🇪" },
@@ -199,6 +211,8 @@ const MODELS = [
   { key:"ukmo_seamless",  label:"영국 UKMO",     flag:"🇬🇧" },
   { key:"metno_seamless", label:"노르웨이 MET",   flag:"🇳🇴" }
 ];
+/* Open-Meteo에서 받는 모델(기상청 제외) */
+const OM_MODELS = MODELS.filter(m=>!m.official);
 const PLAY_HOURS = [6,7,8,9,10,11,12,13,14,15,16,17,18,19];
 
 const WMO = {0:["맑음","☀️"],1:["대체로 맑음","🌤️"],2:["부분 흐림","⛅"],3:["흐림","☁️"],45:["안개","🌫️"],48:["짙은 안개","🌫️"],51:["약한 이슬비","🌦️"],53:["이슬비","🌦️"],55:["강한 이슬비","🌦️"],56:["어는 이슬비","🌧️"],57:["강한 어는 이슬비","🌧️"],61:["약한 비","🌧️"],63:["비","🌧️"],65:["강한 비","🌧️"],66:["어는 비","🌧️"],67:["강한 어는 비","🌧️"],71:["약한 눈","🌨️"],73:["눈","🌨️"],75:["강한 눈","🌨️"],77:["싸락눈","🌨️"],80:["약한 소나기","🌦️"],81:["소나기","🌦️"],82:["강한 소나기","⛈️"],85:["소낙눈","🌨️"],86:["강한 소낙눈","🌨️"],95:["뇌우","⛈️"],96:["우박 동반 뇌우","⛈️"],99:["강한 우박 뇌우","⛈️"]};
@@ -230,7 +244,112 @@ function mainURL(lat,lon,date){
 }
 function srcURL(lat,lon,date){
   const d="temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,weather_code";
-  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=${d}&timezone=Asia%2FSeoul&wind_speed_unit=kmh&start_date=${date}&end_date=${date}&models=${MODELS.map(m=>m.key).join(",")}`;
+  return `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=${d}&timezone=Asia%2FSeoul&wind_speed_unit=kmh&start_date=${date}&end_date=${date}&models=${OM_MODELS.map(m=>m.key).join(",")}`;
+}
+
+/* ── 기상청(KMA) 공식 단기예보 API ─────────────────────────────
+   위경도 → 기상청 격자(nx,ny) 변환(DFS LCC) 후 getVilageFcst 호출.
+   data.go.kr은 요청 Origin을 반영해 CORS를 허용하므로 브라우저에서
+   직접 fetch 가능. 단기예보 제공 범위는 발표일 기준 약 3일입니다.   */
+function dfsXY(lat, lon){
+  const RE=6371.00877, GRID=5.0, SLAT1=30.0, SLAT2=60.0,
+        OLON=126.0, OLAT=38.0, XO=43, YO=136, DEGRAD=Math.PI/180;
+  const re=RE/GRID, slat1=SLAT1*DEGRAD, slat2=SLAT2*DEGRAD,
+        olon=OLON*DEGRAD, olat=OLAT*DEGRAD;
+  let sn=Math.tan(Math.PI*0.25+slat2*0.5)/Math.tan(Math.PI*0.25+slat1*0.5);
+  sn=Math.log(Math.cos(slat1)/Math.cos(slat2))/Math.log(sn);
+  let sf=Math.tan(Math.PI*0.25+slat1*0.5);
+  sf=Math.pow(sf,sn)*Math.cos(slat1)/sn;
+  let ro=Math.tan(Math.PI*0.25+olat*0.5);
+  ro=re*sf/Math.pow(ro,sn);
+  let ra=Math.tan(Math.PI*0.25+lat*DEGRAD*0.5);
+  ra=re*sf/Math.pow(ra,sn);
+  let theta=lon*DEGRAD-olon;
+  if(theta>Math.PI) theta-=2*Math.PI;
+  if(theta<-Math.PI) theta+=2*Math.PI;
+  theta*=sn;
+  return { nx: Math.floor(ra*Math.sin(theta)+XO+0.5),
+           ny: Math.floor(ro-ra*Math.cos(theta)+YO+0.5) };
+}
+
+/* 가장 최근 발표(base_date/base_time) 계산. 발표시각 02·05·08·11·14·17·20·23시
+   기준 +10분 후 제공. 현재 한국시각(KST) 기준으로 최신 회차 선택. */
+function kmaBaseDateTime(){
+  const kst=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Seoul'}));
+  const slots=[23,20,17,14,11,8,5,2];
+  const hm=kst.getHours()*60+kst.getMinutes();
+  const base=new Date(kst);
+  let hour=slots.find(s=>hm>=s*60+10);
+  if(hour===undefined){ base.setDate(base.getDate()-1); hour=23; }
+  const y=base.getFullYear(), m=base.getMonth()+1, d=base.getDate();
+  return {
+    base_date:`${y}${String(m).padStart(2,'0')}${String(d).padStart(2,'0')}`,
+    base_time:String(hour).padStart(2,'0')+"00"
+  };
+}
+
+/* KMA 하늘상태(SKY)·강수형태(PTY) → WMO 코드(이모지/설명 재사용) */
+function kmaToWmo(pty, sky){
+  pty=Number(pty); sky=Number(sky);
+  if(pty===1) return 63;   // 비
+  if(pty===2) return 66;   // 비/눈
+  if(pty===3) return 73;   // 눈
+  if(pty===4) return 80;   // 소나기
+  if(sky===1) return 0;    // 맑음
+  if(sky===3) return 2;    // 구름많음
+  if(sky===4) return 3;    // 흐림
+  return null;
+}
+
+/* 지정 날짜의 기상청 단기예보 요약 반환.
+   성공 시 {ok:true, daily:{...동일 필드명...}, byHour:{hh:{TMP,POP,...}}}   */
+async function fetchKMA(lat, lon, date){
+  if(!KMA_SERVICE_KEY) return {ok:false, reason:'nokey'};
+  const {nx,ny}=dfsXY(lat,lon);
+  const {base_date,base_time}=kmaBaseDateTime();
+  const target=date.replaceAll('-','');
+  const url="https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst"
+    +`?serviceKey=${encodeURIComponent(KMA_SERVICE_KEY)}`
+    +`&pageNo=1&numOfRows=1000&dataType=JSON&base_date=${base_date}&base_time=${base_time}&nx=${nx}&ny=${ny}`;
+  let j;
+  try{
+    const r=await fetch(url);
+    if(!r.ok) return {ok:false, status:r.status};
+    j=await r.json();
+  }catch(e){ return {ok:false, err:e.message}; }
+
+  const items=j && j.response && j.response.body && j.response.body.items
+              && j.response.body.items.item;
+  if(!Array.isArray(items)){
+    const msg=(j && j.response && j.response.header && j.response.header.resultMsg) || 'no items';
+    return {ok:false, msg};
+  }
+  const day=items.filter(it=>it.fcstDate===target);
+  if(!day.length) return {ok:false, reason:'range'};  // 단기예보(약 3일) 범위 밖
+
+  const byHour={}, cat={};
+  day.forEach(it=>{
+    const hh=Number(it.fcstTime.slice(0,2));
+    (byHour[hh]=byHour[hh]||{})[it.category]=it.fcstValue;
+    (cat[it.category]=cat[it.category]||{})[hh]=it.fcstValue;
+  });
+  const pcpMm=v=>{ if(v==null||String(v).includes('없음')) return 0;
+                   const n=parseFloat(v); return isNaN(n)?0:n; };
+  const nums=obj=>Object.values(obj||{}).map(Number).filter(v=>!isNaN(v));
+  const hours=Object.keys(byHour).map(Number);
+  const temps=nums(cat.TMP), pops=nums(cat.POP), winds=nums(cat.WSD);
+  const tmx=nums(cat.TMX), tmn=nums(cat.TMN);
+  const precSum=hours.reduce((s,h)=>s+pcpMm(byHour[h].PCP),0);
+  const rep=byHour[13]||byHour[14]||byHour[12]||byHour[hours[0]]||{};
+  const daily={
+    temperature_2m_max: tmx.length?Math.max(...tmx):(temps.length?Math.max(...temps):null),
+    temperature_2m_min: tmn.length?Math.min(...tmn):(temps.length?Math.min(...temps):null),
+    precipitation_sum:  hours.length?precSum:null,
+    precipitation_probability_max: pops.length?Math.max(...pops):null,
+    wind_speed_10m_max: winds.length?Math.max(...winds)*3.6:null,  // m/s → km/h
+    weather_code: kmaToWmo(rep.PTY, rep.SKY)
+  };
+  return {ok:true, daily, byHour, grid:{nx,ny}};
 }
 
 /* ── 즐겨찾기 (브라우저 localStorage에 저장, 방문자별 개인 목록) ── */

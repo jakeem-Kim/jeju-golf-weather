@@ -106,15 +106,15 @@
   <div class="legend">
     <b>데이터 출처 &amp; 판독 안내</b>
     <ul>
-      <li>모든 값은 <b>Open-Meteo</b>를 통해 각 기관의 원본 예보 모델에서 실시간 수신합니다: 🇰🇷 대한민국 기상청(KMA), 🇯🇵 일본 기상청(JMA), 🇪🇺 유럽중기예보센터(ECMWF), 🇩🇪 독일 기상청(DWD·ICON), 🇺🇸 미국 NOAA(GFS), 🇫🇷 메테오프랑스, 🇬🇧 영국 기상청(UKMO), 🇳🇴 노르웨이 기상청(MET). 카드 상단 대표값은 위치별 최적 모델을 자동 선택한 <b>종합 예보</b>입니다.</li>
-      <li><b>예보 제공 범위</b>는 발표일 기준 약 16일입니다. 그보다 먼 날짜는 "예보 준비 중"으로 표시되며, 범위에 들어오면 자동으로 채워집니다.</li>
-      <li><b>낙뢰 위험도</b>는 예보 기상코드의 뇌우 여부와 대기 불안정 지수(CAPE)로 산출합니다. <b>강수확률</b>은 KMA·JMA 모델이 제공하지 않아 "—"로 표시될 수 있습니다.</li>
+      <li>🇰🇷 <b>대한민국 기상청(KMA)</b>은 기상청 <b>공식 단기예보 API(data.go.kr)</b>에서 직접 수신합니다. 나머지 🇯🇵 일본 기상청(JMA), 🇪🇺 유럽중기예보센터(ECMWF), 🇩🇪 독일 기상청(DWD·ICON), 🇺🇸 미국 NOAA(GFS), 🇫🇷 메테오프랑스, 🇬🇧 영국 기상청(UKMO), 🇳🇴 노르웨이 기상청(MET)은 <b>Open-Meteo</b>를 통해 각 기관 원본 모델에서 수신합니다. 카드 상단 대표값은 위치별 최적 모델을 자동 선택한 <b>종합 예보</b>입니다.</li>
+      <li><b>예보 제공 범위</b>는 해외 모델이 발표일 기준 약 16일, 기상청 단기예보는 약 <b>3일</b>입니다. 범위를 벗어난 날짜는 해당 칸에 "데이터 없음"으로, 전체 카드가 범위를 벗어나면 "예보 준비 중"으로 표시됩니다.</li>
+      <li><b>낙뢰 위험도</b>는 예보 기상코드의 뇌우 여부와 대기 불안정 지수(CAPE)로 산출합니다. <b>강수확률</b>은 JMA 모델이 제공하지 않아 "—"로 표시될 수 있습니다(기상청은 POP 제공).</li>
       <li>예보는 실황이 아니므로 라운딩 당일 아침 재확인을 권장합니다. 낙뢰 예보 시 경기 중단 규정을 따르세요.</li>
     </ul>
   </div>
 </div>
 
-<script src="courses.js?v=6"></script>
+<script src="courses.js?v=7"></script>
 <script>
 const REFRESH_MS = 30*60*1000;
 
@@ -168,7 +168,7 @@ function pastCard(){
       <a class="avail" href="index.html">← 허브에서 다른 날짜 선택</a></div></div>`;
 }
 
-function dataCard(main, srcRes){
+function dataCard(main, srcRes, kmaData){
   const H = main.hourly;
   const idx = H.time.map(t=>Number(t.slice(11,13)));
   let mid = idx.indexOf(13); if(mid<0) mid=Math.floor(idx.length/2);
@@ -203,14 +203,24 @@ function dataCard(main, srcRes){
   let srows="";
   const D = (srcRes && srcRes.daily) ? srcRes.daily : {};
   MODELS.forEach(m=>{
-    const g=(f)=>{const a=D[f+"_"+m.key];return a&&a.length?a[0]:null;};
-    const tmax=g("temperature_2m_max"), tmin=g("temperature_2m_min"),
-          ps=g("precipitation_sum"), pp=g("precipitation_probability_max"),
-          wm=g("wind_speed_10m_max"), wc=g("weather_code");
+    let tmax,tmin,ps,pp,wm,wc,noteTxt=null;
+    if(m.official){                       // 기상청 KMA: 공식 API 결과 사용
+      const kd = (kmaData && kmaData.ok) ? kmaData.daily : null;
+      if(kd){ tmax=kd.temperature_2m_max; tmin=kd.temperature_2m_min; ps=kd.precipitation_sum;
+              pp=kd.precipitation_probability_max; wm=kd.wind_speed_10m_max; wc=kd.weather_code; }
+      else if(kmaData && kmaData.reason==='nokey')  noteTxt='인증키 미설정';
+      else if(kmaData && kmaData.reason==='range')  noteTxt='단기예보 범위 밖(약 3일)';
+      else                                          noteTxt='데이터 없음';
+    }else{                                // 그 외: Open-Meteo 응답 사용
+      const g=(f)=>{const a=D[f+"_"+m.key];return a&&a.length?a[0]:null;};
+      tmax=g("temperature_2m_max"); tmin=g("temperature_2m_min");
+      ps=g("precipitation_sum"); pp=g("precipitation_probability_max");
+      wm=g("wind_speed_10m_max"); wc=g("weather_code");
+    }
     const [dsc,emo]= wc!=null?wmo(wc):["—","·"];
     const avail = (tmax!=null);
     srows+=`<tr style="${avail?'':'opacity:.5'}"><td><span class="src-flag">${m.flag}</span>${m.label}</td>`
-      +`<td>${emo} ${avail?dsc:'데이터 없음'}</td><td>${fmt(tmin,0)}° / ${fmt(tmax,0)}°</td>`
+      +`<td>${emo} ${avail?dsc:(noteTxt||'데이터 없음')}</td><td>${fmt(tmin,0)}° / ${fmt(tmax,0)}°</td>`
       +`<td>${fmt(pp,0)}${pp!=null?'%':''}</td><td>${fmt(ps,1)}mm</td><td>${fmt(wm,0)}</td></tr>`;
   });
 
@@ -268,8 +278,11 @@ async function load(){
   const mainRes = await fetchMaybe(mainURL(COURSE.lat,COURSE.lon,DATE));
   const hasData = mainRes.ok && mainRes.data.hourly && mainRes.data.hourly.temperature_2m.some(v=>v!=null);
   if(hasData){
-    const srcRes = await fetchMaybe(srcURL(COURSE.lat,COURSE.lon,DATE));
-    document.getElementById('card').innerHTML = dataCard(mainRes.data, srcRes.ok?srcRes.data:null);
+    const [srcRes, kmaData] = await Promise.all([
+      fetchMaybe(srcURL(COURSE.lat,COURSE.lon,DATE)),
+      fetchKMA(COURSE.lat, COURSE.lon, DATE)          // 기상청 공식 API 직접 호출
+    ]);
+    document.getElementById('card').innerHTML = dataCard(mainRes.data, srcRes.ok?srcRes.data:null, kmaData);
     setStatus('ok','업데이트: '+new Date().toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}));
   }else if(daysUntil(DATE) < 0){
     document.getElementById('card').innerHTML = pastCard();
