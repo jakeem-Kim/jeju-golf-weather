@@ -178,13 +178,6 @@ const GOLF_COURSES = [
   { id:"teddy",     name:"테디밸리GC",        zone:"제주", region:"서귀포", addr:"서귀포시 안덕면", lat:33.27, lon:126.39 }
 ];
 
-/* 예약된(즐겨찾는) 라운딩 — 허브 상단에 카드로 노출 */
-const PRESET_ROUNDS = [
-  { course:"skyhill",  date:"2026-08-15" },
-  { course:"volcano",  date:"2026-08-16" },
-  { course:"verthill", date:"2026-09-03" }
-];
-
 /* 드롭다운 지역 그룹 순서 */
 const ZONE_ORDER = ["수도권","강원","충청","영남","호남","제주"];
 

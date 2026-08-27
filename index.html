@@ -118,9 +118,6 @@
   <div class="section-label">⭐ 내 즐겨찾기 <span class="count" id="favCount"></span></div>
   <div id="favWrap"></div>
 
-  <div class="section-label">📌 예약된 라운딩</div>
-  <div class="rounds" id="rounds"></div>
-
   <div class="footnote">
     <b>데이터 출처</b> · 예보는 <b>Open-Meteo</b>를 통해 각 기관 원본 모델(🇰🇷기상청 KMA · 🇯🇵일본기상청 JMA · 🇪🇺유럽 ECMWF · 🇩🇪독일 DWD · 🇺🇸미국 NOAA · 🇫🇷메테오프랑스 · 🇬🇧영국 UKMO · 🇳🇴노르웨이 MET)에서 실시간 수신합니다. 지도 타일 © OpenStreetMap 기여자.<br>
     즐겨찾기는 이 브라우저에만 저장됩니다(개인 목록). 새 골프장은 <b>courses.js</b>의 <span style="font-family:monospace">GOLF_COURSES</span>에 좌표를 추가하면 지도·목록에 자동 반영됩니다.
@@ -149,7 +146,7 @@ ZONE_ORDER.forEach(zone=>{
 const dateInput = document.getElementById('selDate');
 dateInput.min = ymd(today);
 dateInput.max = ymd(new Date(today.getTime()+30*86400000));
-dateInput.value = (PRESET_ROUNDS.map(r=>r.date).sort().find(d=>new Date(d+"T00:00:00")>=today)) || ymd(new Date(today.getTime()+86400000));
+dateInput.value = ymd(new Date(today.getTime()+86400000));
 
 /* ── 선택 상태 ── */
 function updateSelNote(){
@@ -239,17 +236,6 @@ async function loadPeek(el, c, date){
   }
 }
 
-/* ── 예약된 라운딩 (X로 숨김 가능) ── */
-function renderPresets(){
-  const wrap=document.getElementById('rounds'); wrap.innerHTML='';
-  const list=PRESET_ROUNDS.filter(r=>courseById(r.course) && !isPresetDismissed(r.course,r.date));
-  if(!list.length){ wrap.innerHTML=`<div class="empty-fav">표시할 예약 라운딩이 없습니다.</div>`; return; }
-  list.forEach(r=>{
-    const c=courseById(r.course);
-    wrap.appendChild(makeCard(c, r.date, {removeTitle:'예약 라운딩 숨기기', onRemove:()=>{ dismissPreset(r.course,r.date); renderPresets(); }}));
-  });
-}
-
 /* ── 즐겨찾기 ── */
 function renderFavorites(){
   const wrap=document.getElementById('favWrap');
@@ -268,7 +254,6 @@ function renderFavorites(){
 /* ── 초기화 ── */
 initMap();
 updateSelNote();
-renderPresets();
 renderFavorites();
 </script>
 </body>
