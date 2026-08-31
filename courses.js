@@ -78,6 +78,7 @@ const GOLF_COURSES = [
   { id:"hillmaru",  name:"포천 힐마루CC",     zone:"수도권", region:"경기 포천", addr:"포천시 영중면 금화봉4길 77", lat:38.00, lon:127.25 },
   { id:"philos",    name:"필로스CC",          zone:"수도권", region:"경기 포천", addr:"포천시 일동면 운악청계로 1507", lat:38.00, lon:127.34 },
   { id:"purunsol",  name:"포천 푸른솔CC",      zone:"수도권", region:"경기 포천", addr:"포천시 가산면 금우로 276", lat:37.90, lon:127.19 },
+  { id:"inseoul27", name:"인서울27CC",        zone:"수도권", region:"서울 강서", addr:"서울 강서구 오정로 443-198 (오곡동)", lat:37.58, lon:126.78 },
 
   /* ── 강원 ── */
   { id:"whistling", name:"휘슬링락CC",        zone:"강원", region:"춘천", addr:"춘천시 남산면 동촌로 501", lat:37.78, lon:127.56 },
