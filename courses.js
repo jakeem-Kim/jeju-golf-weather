@@ -43,6 +43,7 @@ const GOLF_COURSES = [
   { id:"southsprings",name:"사우스스프링스CC",zone:"수도권", region:"경기 이천", addr:"이천시 설성면", lat:37.11, lon:127.50 },
   { id:"blackstonei",name:"블랙스톤이천GC",   zone:"수도권", region:"경기 이천", addr:"이천시 신둔면", lat:37.31, lon:127.43 },
   { id:"lexfield",  name:"렉스필드CC",        zone:"수도권", region:"경기 여주", addr:"여주시 대신면", lat:37.36, lon:127.52 },
+  { id:"blueheron", name:"블루헤런GC",        zone:"수도권", region:"경기 여주", addr:"여주시 대신면 고달사로 67", lat:37.40, lon:127.54 },
   { id:"ferrum",    name:"페럼클럽",          zone:"수도권", region:"경기 여주", addr:"여주시 산북면", lat:37.43, lon:127.63 },
   { id:"yeoju",     name:"여주CC",            zone:"수도권", region:"경기 여주", addr:"여주시 능서면", lat:37.27, lon:127.61 },
   { id:"ipo",       name:"이포CC",            zone:"수도권", region:"경기 여주", addr:"여주시 금사면", lat:37.34, lon:127.56 },
