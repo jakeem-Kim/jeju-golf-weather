@@ -57,6 +57,7 @@ const GOLF_COURSES = [
   { id:"bearcreekp",name:"베어크리크 포천",   zone:"수도권", region:"경기 포천", addr:"포천시 가산면", lat:37.92, lon:127.22 },
   { id:"montvert",  name:"몽베르CC",          zone:"수도권", region:"경기 포천", addr:"포천시 신북면", lat:37.98, lon:127.28 },
   { id:"adonis",    name:"아도니스CC",        zone:"수도권", region:"경기 양주", addr:"양주시 은현면", lat:37.86, lon:126.95 },
+  { id:"songchu",   name:"송추CC",          zone:"수도권", region:"경기 양주", addr:"양주시 광적면 쇠장이길 435", lat:37.80, lon:126.96 },
   { id:"royal",     name:"로얄CC",            zone:"수도권", region:"경기 양주", addr:"양주시 백석읍", lat:37.78, lon:126.93 },
   { id:"seowon",    name:"서원밸리CC",        zone:"수도권", region:"경기 파주", addr:"파주시 광탄면", lat:37.77, lon:126.88 },
   { id:"seowonhills",name:"서원힐스CC",        zone:"수도권", region:"경기 파주", addr:"파주시 광탄면 서원길 333", lat:37.78, lon:126.89 },
