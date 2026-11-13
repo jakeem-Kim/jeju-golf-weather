@@ -168,6 +168,35 @@ function pastCard(){
       <a class="avail" href="index.html">← 허브에서 다른 날짜 선택</a></div></div>`;
 }
 
+/* 기관별 비교표 행 생성 (Open-Meteo 응답 srcRes·기상청 kmaData는 각각 독립적으로 null 가능) */
+function srcRows(srcRes, kmaData){
+  let srows="";
+  const D = (srcRes && srcRes.daily) ? srcRes.daily : {};
+  MODELS.forEach(m=>{
+    let tmax,tmin,ps,pp,wm,wc,noteTxt=null;
+    if(m.official){                       // 기상청 KMA: 공식 API 결과 사용
+      const kd = (kmaData && kmaData.ok) ? kmaData.daily : null;
+      if(kd){ tmax=kd.temperature_2m_max; tmin=kd.temperature_2m_min; ps=kd.precipitation_sum;
+              pp=kd.precipitation_probability_max; wm=kd.wind_speed_10m_max; wc=kd.weather_code; }
+      else if(kmaData && kmaData.reason==='nokey')  noteTxt='인증키 미설정';
+      else if(kmaData && kmaData.reason==='range')  noteTxt='단기예보 범위 밖(약 3일)';
+      else                                          noteTxt='데이터 없음';
+    }else{                                // 그 외: Open-Meteo 응답 사용
+      const g=(f)=>{const a=D[f+"_"+m.key];return a&&a.length?a[0]:null;};
+      tmax=g("temperature_2m_max"); tmin=g("temperature_2m_min");
+      ps=g("precipitation_sum"); pp=g("precipitation_probability_max");
+      wm=g("wind_speed_10m_max"); wc=g("weather_code");
+    }
+    const [dsc,emo]= wc!=null?wmo(wc):["—","·"];
+    const avail = (tmax!=null);
+    if(!m.official && !avail && !(srcRes && srcRes.daily)) noteTxt='응답 실패';
+    srows+=`<tr style="${avail?'':'opacity:.5'}"><td><span class="src-flag">${m.flag}</span>${m.label}</td>`
+      +`<td>${emo} ${avail?dsc:(noteTxt||'데이터 없음')}</td><td>${fmt(tmin,0)}° / ${fmt(tmax,0)}°</td>`
+      +`<td>${fmt(pp,0)}${pp!=null?'%':''}</td><td>${fmt(ps,1)}mm</td><td>${fmt(wm,0)}</td></tr>`;
+  });
+  return srows;
+}
+
 function dataCard(main, srcRes, kmaData){
   const H = main.hourly;
   const idx = H.time.map(t=>Number(t.slice(11,13)));
@@ -200,29 +229,7 @@ function dataCard(main, srcRes, kmaData){
       +`<td>${cp>=1000?'⚠️':''}${fmt(cp,0)}</td></tr>`;
   });
 
-  let srows="";
-  const D = (srcRes && srcRes.daily) ? srcRes.daily : {};
-  MODELS.forEach(m=>{
-    let tmax,tmin,ps,pp,wm,wc,noteTxt=null;
-    if(m.official){                       // 기상청 KMA: 공식 API 결과 사용
-      const kd = (kmaData && kmaData.ok) ? kmaData.daily : null;
-      if(kd){ tmax=kd.temperature_2m_max; tmin=kd.temperature_2m_min; ps=kd.precipitation_sum;
-              pp=kd.precipitation_probability_max; wm=kd.wind_speed_10m_max; wc=kd.weather_code; }
-      else if(kmaData && kmaData.reason==='nokey')  noteTxt='인증키 미설정';
-      else if(kmaData && kmaData.reason==='range')  noteTxt='단기예보 범위 밖(약 3일)';
-      else                                          noteTxt='데이터 없음';
-    }else{                                // 그 외: Open-Meteo 응답 사용
-      const g=(f)=>{const a=D[f+"_"+m.key];return a&&a.length?a[0]:null;};
-      tmax=g("temperature_2m_max"); tmin=g("temperature_2m_min");
-      ps=g("precipitation_sum"); pp=g("precipitation_probability_max");
-      wm=g("wind_speed_10m_max"); wc=g("weather_code");
-    }
-    const [dsc,emo]= wc!=null?wmo(wc):["—","·"];
-    const avail = (tmax!=null);
-    srows+=`<tr style="${avail?'':'opacity:.5'}"><td><span class="src-flag">${m.flag}</span>${m.label}</td>`
-      +`<td>${emo} ${avail?dsc:(noteTxt||'데이터 없음')}</td><td>${fmt(tmin,0)}° / ${fmt(tmax,0)}°</td>`
-      +`<td>${fmt(pp,0)}${pp!=null?'%':''}</td><td>${fmt(ps,1)}mm</td><td>${fmt(wm,0)}</td></tr>`;
-  });
+  const srows = srcRows(srcRes, kmaData);
 
   return `<div class="card">
     <div class="card-head"><h2>${COURSE.name}</h2><div class="course-meta">${COURSE.addr}</div>
@@ -255,6 +262,79 @@ function dataCard(main, srcRes, kmaData){
   </div>`;
 }
 
+/* Open-Meteo 종합예보가 없을 때 기상청(공식 API) 데이터만으로 그리는 카드 */
+function kmaOnlyCard(kmaData, srcRes, mainRes){
+  const B = kmaData.byHour, d = kmaData.daily;
+  const hrs = Object.keys(B).map(Number).sort((a,b)=>a-b);
+  const hasT = h => B[h] && B[h].TMP!=null;
+  const mid = [13,14,12].find(hasT) ?? hrs.find(hasT) ?? hrs[0];
+  const pcpMm = v => { if(v==null||String(v).includes('없음')) return 0; const n=parseFloat(v); return isNaN(n)?0:n; };
+  const num = v => (v==null||v===''||isNaN(Number(v))) ? null : Number(v);
+  const m = B[mid] || {};
+  const [wdesc,wemo] = wmo(kmaToWmo(m.PTY, m.SKY));
+  const popMax = d.precipitation_probability_max;
+  const windMax = d.wind_speed_10m_max;
+  const risk = capeRisk(null,false);
+  let rows="";
+  PLAY_HOURS.forEach(h=>{
+    const b=B[h]; if(!b || b.TMP==null) return;
+    const [,emo]=wmo(kmaToWmo(b.PTY,b.SKY));
+    const t=num(b.TMP), pop=num(b.POP), pr=pcpMm(b.PCP), w=num(b.WSD);
+    rows+=`<tr class="hour"><td>${String(h).padStart(2,'0')}시</td><td>${emo}</td>`
+      +`<td class="${t>=30?'hot':''}">${fmt(t,1)}°</td>`
+      +`<td class="${pop>=60?'rain':''}">${fmt(pop,0)}${pop!=null?'%':''}</td>`
+      +`<td class="${pr>=1?'rain':''}">${fmt(pr,1)}</td>`
+      +`<td>${windDir(num(b.VEC))} ${fmt(w!=null?w*3.6:null,0)}</td><td>—</td><td>—</td></tr>`;
+  });
+  const why = mainRes && !mainRes.ok
+    ? `Open-Meteo 응답 실패${mainRes.status?' (HTTP '+mainRes.status+')':''}`
+    : 'Open-Meteo 종합예보 데이터 없음';
+  return `<div class="card">
+    <div class="card-head"><h2>${COURSE.name}</h2><div class="course-meta">${COURSE.addr}</div>
+      <span class="date-badge">📅 ${DATE.replaceAll('-','.')} (${weekday(DATE)})</span></div>
+    <div class="waiting" style="padding:10px 0 0"><p style="margin:0">⚠️ ${why} — <b>기상청 공식 예보만</b> 표시합니다. 돌풍·CAPE(낙뢰 지표)는 제공되지 않습니다.</p></div>
+    <div class="headline">
+      <div class="wxicon">${wemo}</div>
+      <div class="bigtemp">${fmt(num(m.TMP),0)}<span style="font-size:22px">°C</span></div>
+      <div class="desc"><div>${wdesc}</div>
+        <div class="sm">${String(mid).padStart(2,'0')}시 기준 · 기상청 단기예보</div>
+        <div class="sm">낮 최고 ${fmt(d.temperature_2m_max,0)}° / 최저 ${fmt(d.temperature_2m_min,0)}° · 습도 ${fmt(num(m.REH),0)}%</div>
+      </div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="k">강수확률(최대)</div><div class="v">${fmt(popMax,0)}<span class="u">%</span></div></div>
+      <div class="metric"><div class="k">예상 강수량</div><div class="v">${fmt(d.precipitation_sum,1)}<span class="u">mm</span></div></div>
+      <div class="metric"><div class="k">바람(최대)</div><div class="v">${fmt(windMax,0)}<span class="u">km/h</span></div></div>
+      <div class="metric"><div class="k">순간돌풍</div><div class="v">—</div></div>
+    </div>
+    <div class="risk ${risk.cls}"><span style="font-size:16px">⚡</span>
+      <span>낙뢰 위험 <span class="tag">${risk.tag}</span></span><span class="note">${risk.txt}</span></div>
+    <div class="sec-title">시간대별 예보 (06–19시) · 기상청 단기예보</div>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>시각</th><th></th><th>기온</th><th>강수<br>확률</th><th>강수<br>mm</th><th>바람<br>km/h</th><th>돌풍</th><th>CAPE</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <div class="sec-title">기관별 예보 비교 (당일 요약)</div>
+    <div class="tbl-scroll"><table class="src-table">
+      <thead><tr><th>출처</th><th>날씨</th><th>최저/최고</th><th>강수확률</th><th>강수량</th><th>최대풍속</th></tr></thead>
+      <tbody>${srcRows(srcRes, kmaData)}</tbody></table></div>
+    <div class="cardfoot">위치 좌표 ${COURSE.lat}, ${COURSE.lon} · 시간대 Asia/Seoul</div>
+  </div>`;
+}
+
+/* 예보 서버 호출 자체가 실패했을 때(범위 밖이 아님) — "예보 준비 중"과 구분해 표시 */
+function errorCard(mainRes){
+  const code = mainRes && mainRes.status ? ' (HTTP '+mainRes.status+')' : '';
+  const hint = mainRes && mainRes.status===429
+    ? '예보 서버(Open-Meteo)의 호출 한도를 초과했습니다. 사내망처럼 여러 명이 같은 IP를 쓰면 발생할 수 있습니다.'
+    : '네트워크 차단·일시 장애일 수 있습니다.';
+  return `<div class="card">
+    <div class="card-head"><h2>${COURSE.name}</h2><div class="course-meta">${COURSE.addr}</div>
+      <span class="date-badge">📅 ${DATE.replaceAll('-','.')} (${weekday(DATE)})</span></div>
+    <div class="waiting"><div class="big">⚠️</div><h3>예보 서버 응답 실패${code}</h3>
+      <p>${hint}</p>
+      <p>잠시 후 "새로고침"을 눌러 다시 시도해 주세요. (이 페이지는 30분마다 자동 재시도합니다.)</p></div></div>`;
+}
+
 let nextAt=0;
 function setStatus(state, text){
   document.getElementById('statusDot').className="dot"+(state==='ok'?'':state==='err'?' err':state==='wait'?' wait':' load');
@@ -275,18 +355,26 @@ async function load(){
     setStatus('wait','예보 준비 중 · '+availDateStr(DATE)+' 표시 시작');
     nextAt=Date.now()+REFRESH_MS; btn.disabled=false; return;
   }
-  const mainRes = await fetchMaybe(mainURL(COURSE.lat,COURSE.lon,DATE));
+  /* 세 호출은 서로 독립 — 하나가 실패해도 나머지는 그대로 사용 */
+  const [mainRes, srcRes, kmaData] = await Promise.all([
+    fetchMaybe(mainURL(COURSE.lat,COURSE.lon,DATE)),
+    fetchMaybe(srcURL(COURSE.lat,COURSE.lon,DATE)),
+    fetchKMA(COURSE.lat, COURSE.lon, DATE)            // 기상청 공식 API 직접 호출
+  ]);
   const hasData = mainRes.ok && mainRes.data.hourly && mainRes.data.hourly.temperature_2m.some(v=>v!=null);
+  const stamp = '업데이트: '+new Date().toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
   if(hasData){
-    const [srcRes, kmaData] = await Promise.all([
-      fetchMaybe(srcURL(COURSE.lat,COURSE.lon,DATE)),
-      fetchKMA(COURSE.lat, COURSE.lon, DATE)          // 기상청 공식 API 직접 호출
-    ]);
     document.getElementById('card').innerHTML = dataCard(mainRes.data, srcRes.ok?srcRes.data:null, kmaData);
-    setStatus('ok','업데이트: '+new Date().toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}));
+    setStatus('ok', stamp);
   }else if(daysUntil(DATE) < 0){
     document.getElementById('card').innerHTML = pastCard();
     setStatus('err','지난 날짜');
+  }else if(kmaData && kmaData.ok){
+    document.getElementById('card').innerHTML = kmaOnlyCard(kmaData, srcRes.ok?srcRes.data:null, mainRes);
+    setStatus('wait','기상청 예보만 표시 · Open-Meteo '+(mainRes.ok?'데이터 없음':'응답 실패'));
+  }else if(!mainRes.ok){
+    document.getElementById('card').innerHTML = errorCard(mainRes);
+    setStatus('err','예보 서버 응답 실패'+(mainRes.status?' ('+mainRes.status+')':''));
   }else{
     document.getElementById('card').innerHTML = waitingCard();
     setStatus('wait','예보 준비 중');
