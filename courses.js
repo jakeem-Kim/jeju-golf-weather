@@ -217,7 +217,7 @@ const MODELS = [
 const OM_MODELS = MODELS.filter(m=>!m.official);
 const PLAY_HOURS = [6,7,8,9,10,11,12,13,14,15,16,17,18,19];
 
-const WMO = {0:["맑음","☀️"],1:["대체로 맑음","🌤️"],2:["부분 흐림","⛅"],3:["흐림","☁️"],45:["안개","🌫️"],48:["짙은 안개","🌫️"],51:["약한 이슬비","🌦️"],53:["이슬비","🌦️"],55:["강한 이슬비","🌦️"],56:["어는 이슬비","🌧️"],57:["강한 어는 이슬비","🌧️"],61:["약한 비","🌧️"],63:["비","🌧️"],65:["강한 비","🌧️"],66:["어는 비","🌧️"],67:["강한 어는 비","🌧️"],71:["약한 눈","🌨️"],73:["눈","🌨️"],75:["강한 눈","🌨️"],77:["싸락눈","🌨️"],80:["약한 소나기","🌦️"],81:["소나기","🌦️"],82:["강한 소나기","⛈️"],85:["소낙눈","🌨️"],86:["강한 소낙눈","🌨️"],95:["뇌우","⛈️"],96:["우박 동반 뇌우","⛈️"],99:["강한 우박 뇌우","⛈️"]};
+const WMO = {0:["맑음","☀️"],1:["대체로 맑음","🌤️"],2:["부분 흐림","⛅"],3:["흐림","☁️"],45:["안개","🌫️"],48:["짙은 안개","🌫️"],51:["약한 이슬비","🌦️"],53:["이슬비","🌦️"],55:["강한 이슬비","🌦️"],56:["어는 이슬비","🌧️"],57:["강한 어는 이슬비","🌧️"],61:["약한 비","🌧️"],63:["비","🌧️"],65:["강한 비","🌧️"],66:["어는 비","🌧️"],67:["강한 어는 비","🌧️"],68:["진눈깨비","🌨️"],69:["강한 진눈깨비","🌨️"],71:["약한 눈","🌨️"],73:["눈","🌨️"],75:["강한 눈","🌨️"],77:["싸락눈","🌨️"],80:["약한 소나기","🌦️"],81:["소나기","🌦️"],82:["강한 소나기","⛈️"],85:["소낙눈","🌨️"],86:["강한 소낙눈","🌨️"],95:["뇌우","⛈️"],96:["우박 동반 뇌우","⛈️"],99:["강한 우박 뇌우","⛈️"]};
 function wmo(c){ return WMO[c] || ["-","❓"]; }
 
 function windDir(deg){ if(deg==null) return "-"; const d=["북","북동","동","남동","남","남서","서","북서"]; return d[Math.round(deg/45)%8]; }
@@ -359,6 +359,126 @@ async function fetchKMA(lat, lon, date){
     weather_code: kmaToWmo(rep.PTY, rep.SKY)
   };
   return {ok:true, daily, byHour, grid:{nx,ny}};
+}
+
+/* ── 노르웨이 기상청(MET) 직접 예보 백업 (api.met.no) ────────────────
+   Open-Meteo가 응답하지 않을 때(호출 한도 초과·회선 차단·장애) 화면을 비우지 않도록
+   MET 공개 예보 API(locationforecast 2.0 compact)를 브라우저에서 직접 호출합니다.
+   · 좌표만으로 조회하며 인증키가 필요 없습니다(CORS 허용: access-control-allow-origin *).
+   · 브라우저는 User-Agent를 임의로 바꿀 수 없지만 기본 브라우저 UA로도 정상 응답합니다.
+   · 한국은 MET의 전지구 모델(ECMWF 기반, 약 9km) 예보를 쓰며 제공 기간은 약 10일입니다.
+   · 근거리(약 3일)는 1시간 간격, 이후는 6시간 간격으로 내려옵니다.
+   · compact 응답에는 기온·습도·풍향/풍속·강수량·날씨코드만 있고
+     강수확률·돌풍·CAPE는 없습니다(그래서 강수확률은 기상청 단기예보로 보완).      */
+const MET_MAX_DAYS = 10;
+function metURL(lat, lon){
+  return `https://api.met.no/weatherapi/locationforecast/2.0/compact`
+    + `?lat=${Number(lat).toFixed(4)}&lon=${Number(lon).toFixed(4)}`;
+}
+
+/* MET symbol_code → WMO 코드. 뒤에 붙는 _day/_night/_polartwilight는 무시합니다. */
+const MET_SYMBOL = {
+  clearsky:0, fair:1, partlycloudy:2, cloudy:3, fog:45,
+  lightrain:61, rain:63, heavyrain:65,
+  lightrainshowers:80, rainshowers:81, heavyrainshowers:82,
+  lightsleet:68, sleet:68, heavysleet:69,
+  lightsleetshowers:68, sleetshowers:68, heavysleetshowers:69,
+  lightsnow:71, snow:73, heavysnow:75,
+  lightsnowshowers:85, snowshowers:85, heavysnowshowers:86,
+  lightrainandthunder:95, rainandthunder:95, heavyrainandthunder:95,
+  lightrainshowersandthunder:95, rainshowersandthunder:95, heavyrainshowersandthunder:99,
+  lightsleetandthunder:95, sleetandthunder:95, heavysleetandthunder:95,
+  lightsleetshowersandthunder:95, sleetshowersandthunder:95, heavysleetshowersandthunder:99,
+  lightsnowandthunder:95, snowandthunder:95, heavysnowandthunder:95,
+  lightsnowshowersandthunder:95, snowshowersandthunder:95, heavysnowshowersandthunder:99
+};
+function metSymbolToWmo(code){
+  if(!code) return null;
+  const base = String(code).replace(/_(day|night|polartwilight)$/, '');
+  if(MET_SYMBOL[base] != null) return MET_SYMBOL[base];
+  const s = base.toLowerCase();                     // 표에 없는 코드는 이름으로 추정
+  if(s.includes('thunder')) return 95;
+  if(s.includes('snow'))    return 73;
+  if(s.includes('sleet'))   return 68;
+  if(s.includes('rain'))    return s.includes('shower') ? 81 : 63;
+  if(s.includes('fog'))     return 45;
+  if(s.includes('cloudy'))  return 3;
+  if(s.includes('clear'))   return 0;
+  if(s.includes('fair'))    return 1;
+  return null;
+}
+
+/* MET 시각(UTC ISO) → 한국시각 날짜/시각 (KST는 서머타임이 없어 +9시간 고정) */
+function metKST(iso){
+  const t = new Date(iso);
+  if(isNaN(t.getTime())) return null;
+  const k = new Date(t.getTime() + 9*3600*1000);
+  const p2 = n => String(n).padStart(2,'0');
+  return {
+    date: `${k.getUTCFullYear()}-${p2(k.getUTCMonth()+1)}-${p2(k.getUTCDate())}`,
+    hour: k.getUTCHours(), minute: k.getUTCMinutes()
+  };
+}
+
+/* 지정 날짜의 MET 직접 예보 요약.
+   성공 시 {ok:true, daily:{...}, slots:[...], rep, granularity, updatedAt}   */
+async function fetchMET(lat, lon, date){
+  let j;
+  try{
+    const r = await fetchWithTimeout(metURL(lat, lon));
+    if(!r.ok) return {ok:false, status:r.status};
+    j = await r.json();
+  }catch(e){ return {ok:false, status:0, timeout:!!(e&&e.name==='AbortError'), err:e&&e.message}; }
+
+  const ts = j && j.properties && j.properties.timeseries;
+  if(!Array.isArray(ts) || !ts.length) return {ok:false, reason:'nodata'};
+  const num = v => (v==null||isNaN(Number(v))) ? null : Number(v);
+
+  const slots = [];
+  ts.forEach(e=>{
+    const t = metKST(e.time);
+    const d = (e.data && e.data.instant && e.data.instant.details) || {};
+    const n1 = e.data && e.data.next_1_hours;
+    const n6 = e.data && e.data.next_6_hours;
+    const per = n1 || n6 || null;                  /* 기간 예보(날씨코드·강수량) */
+    if(!t || d.air_temperature==null) return;
+    const det = (per && per.details) || {};
+    slots.push({
+      date: t.date, hour: t.hour, minute: t.minute,
+      span: n1 ? 1 : (n6 ? 6 : 0),                /* 이 값이 적용되는 시간 폭(시간) */
+      temp: num(d.air_temperature),
+      rh:   num(d.relative_humidity),
+      wind: d.wind_speed!=null ? Number(d.wind_speed)*3.6 : null,   /* m/s → km/h */
+      wdir: num(d.wind_from_direction),
+      symbol: (per && per.summary && per.summary.symbol_code) || null,
+      code: metSymbolToWmo(per && per.summary && per.summary.symbol_code),
+      precip: det.precipitation_amount!=null ? Number(det.precipitation_amount) : null
+    });
+  });
+  const day = slots.filter(s=>s.date===date).sort((a,b)=>a.hour-b.hour);
+  if(!day.length) return {ok:false, reason:'range'};    /* 예보 범위(약 10일) 밖 */
+
+  const temps = day.map(s=>s.temp).filter(v=>v!=null);
+  const precs = day.map(s=>s.precip).filter(v=>v!=null);
+  const winds = day.map(s=>s.wind).filter(v=>v!=null);
+  const hasHourly = day.some(s=>s.span===1), has6h = day.some(s=>s.span===6);
+  /* 대표값: 13시를 포함하는 구간 → 없으면 13시에 가장 가까운 구간 */
+  const covering = day.find(s=>s.span>0 && s.hour<=13 && s.hour+s.span>13);
+  const rep = covering || day.reduce((b,s)=> (b==null || Math.abs(s.hour-13)<Math.abs(b.hour-13)) ? s : b, null);
+  const daily = {
+    temperature_2m_max: temps.length?Math.max(...temps):null,
+    temperature_2m_min: temps.length?Math.min(...temps):null,
+    precipitation_sum:  precs.length?precs.reduce((a,b)=>a+b,0):null,
+    precipitation_probability_max: null,             /* MET compact 미제공 */
+    wind_speed_10m_max: winds.length?Math.max(...winds):null,
+    weather_code: rep ? rep.code : null
+  };
+  return {
+    ok:true, date, slots: day, rep, daily,
+    granularity: (hasHourly && has6h) ? 'mixed' : (hasHourly ? '1h' : '6h'),
+    updatedAt: (j.properties.meta && j.properties.meta.updated_at) || null,
+    elevation: (j.geometry && Array.isArray(j.geometry.coordinates)) ? j.geometry.coordinates[2] : null
+  };
 }
 
 /* ── 즐겨찾기 (브라우저 localStorage에 저장, 방문자별 개인 목록) ── */

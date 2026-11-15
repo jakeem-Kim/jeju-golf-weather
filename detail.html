@@ -107,6 +107,7 @@
     <b>데이터 출처 &amp; 판독 안내</b>
     <ul>
       <li>🇰🇷 <b>대한민국 기상청(KMA)</b>은 기상청 <b>공식 단기예보 API(data.go.kr)</b>에서 직접 수신합니다. 나머지 🇯🇵 일본 기상청(JMA), 🇪🇺 유럽중기예보센터(ECMWF), 🇩🇪 독일 기상청(DWD·ICON), 🇺🇸 미국 NOAA(GFS), 🇫🇷 메테오프랑스, 🇬🇧 영국 기상청(UKMO), 🇳🇴 노르웨이 기상청(MET)은 <b>Open-Meteo</b>를 통해 각 기관 원본 모델에서 수신합니다. 카드 상단 대표값은 위치별 최적 모델을 자동 선택한 <b>종합 예보</b>입니다.</li>
+      <li><b>Open-Meteo가 응답하지 않을 때</b>는 🇳🇴 노르웨이 기상청(MET)의 공개 예보 API(<span style="font-family:monospace">api.met.no</span>)를 브라우저에서 직접 호출해 <b>약 10일 범위</b>까지 예보를 대신 표시합니다. 근거리는 1시간, 4일 이후는 6시간 간격이며, MET 예보에는 <b>강수확률·돌풍·CAPE가 없습니다</b>(강수확률은 기상청 단기예보가 있을 때 함께 표시).</li>
       <li><b>예보 제공 범위</b>는 해외 모델이 발표일 기준 약 16일, 기상청 단기예보는 약 <b>3일</b>입니다. 범위를 벗어난 날짜는 해당 칸에 "데이터 없음"으로, 전체 카드가 범위를 벗어나면 "예보 준비 중"으로 표시됩니다.</li>
       <li><b>낙뢰 위험도</b>는 예보 기상코드의 뇌우 여부와 대기 불안정 지수(CAPE)로 산출합니다. <b>강수확률</b>은 JMA 모델이 제공하지 않아 "—"로 표시될 수 있습니다(기상청은 POP 제공).</li>
       <li>예보는 실황이 아니므로 라운딩 당일 아침 재확인을 권장합니다. 낙뢰 예보 시 경기 중단 규정을 따르세요.</li>
@@ -114,7 +115,7 @@
   </div>
 </div>
 
-<script src="courses.js?v=9"></script>
+<script src="courses.js?v=10"></script>
 <script>
 const REFRESH_MS = 30*60*1000;
 
@@ -168,8 +169,8 @@ function pastCard(){
       <a class="avail" href="index.html">← 허브에서 다른 날짜 선택</a></div></div>`;
 }
 
-/* 기관별 비교표 행 생성 (Open-Meteo 응답 srcRes·기상청 kmaData는 각각 독립적으로 null 가능) */
-function srcRows(srcRes, kmaData){
+/* 기관별 비교표 행 생성 (Open-Meteo 응답 srcRes·기상청 kmaData·MET 직접 metData는 각각 독립적으로 null 가능) */
+function srcRows(srcRes, kmaData, metData){
   let srows="";
   const D = (srcRes && srcRes.daily) ? srcRes.daily : {};
   MODELS.forEach(m=>{
@@ -194,6 +195,14 @@ function srcRows(srcRes, kmaData){
       +`<td>${emo} ${avail?dsc:(noteTxt||'데이터 없음')}</td><td>${fmt(tmin,0)}° / ${fmt(tmax,0)}°</td>`
       +`<td>${fmt(pp,0)}${pp!=null?'%':''}</td><td>${fmt(ps,1)}mm</td><td>${fmt(wm,0)}</td></tr>`;
   });
+  if(metData && metData.ok){          // MET 직접 호출(Open-Meteo 미경유) — 백업 카드에서만 표시
+    const d = metData.daily;
+    const [dsc,emo] = d.weather_code!=null ? wmo(d.weather_code) : ["—","·"];
+    srows+=`<tr><td><span class="src-flag">🇳🇴</span>노르웨이 MET (직접)`
+      +`<div style="font-weight:400;color:var(--muted);font-size:11px">api.met.no · Open-Meteo 미경유</div></td>`
+      +`<td>${emo} ${d.weather_code!=null?dsc:'—'}</td><td>${fmt(d.temperature_2m_min,0)}° / ${fmt(d.temperature_2m_max,0)}°</td>`
+      +`<td>—</td><td>${fmt(d.precipitation_sum,1)}mm</td><td>${fmt(d.wind_speed_10m_max,0)}</td></tr>`;
+  }
   return srows;
 }
 
@@ -321,6 +330,81 @@ function kmaOnlyCard(kmaData, srcRes, mainRes){
   </div>`;
 }
 
+/* Open-Meteo가 응답하지 않을 때 — 노르웨이 기상청(MET) 공개 API를 직접 호출한 예보로 그리는 카드.
+   MET compact 응답에는 기온·습도·풍향/풍속·강수량·날씨코드만 있어 강수확률·돌풍·CAPE가 없습니다.
+   강수확률은 기상청 단기예보(약 3일)가 있으면 "기상청" 열로 함께 보여줍니다.
+   MET는 4일 이후를 6시간 간격으로 내려주므로 그 구간은 09–15시처럼 구간으로 표시합니다. */
+function metCard(met, kmaData, srcRes, mainRes){
+  const daily = met.daily;
+  const kmaOk = !!(kmaData && kmaData.ok);
+  const p2 = n => String(n).padStart(2,'0');
+  const popOf = (from,to)=>{            // 기상청 단기예보 시간별 POP → 구간 최대값
+    if(!kmaOk) return null;
+    const vals=[];
+    for(let h=from; h<to; h++){
+      const b = kmaData.byHour[((h%24)+24)%24];
+      if(b && b.POP!=null && !isNaN(Number(b.POP))) vals.push(Number(b.POP));
+    }
+    return vals.length ? Math.max(...vals) : null;
+  };
+  const play = met.slots.filter(s=>s.span>0 && s.hour<=19 && s.hour+s.span>6);
+  const label = s => s.span===1 ? `${p2(s.hour)}시` : `${p2(s.hour)}–${p2((s.hour+s.span)%24)}시`;
+  let rows="";
+  play.forEach(s=>{
+    const [,emo] = s.code!=null ? wmo(s.code) : ["—","·"];
+    const t=s.temp, pr=s.precip, pop=popOf(s.hour, s.hour+s.span);
+    rows += `<tr class="hour"><td>${label(s)}</td><td>${emo}</td>`
+      + `<td class="${t>=30?'hot':''}">${fmt(t,1)}°</td>`
+      + `<td class="${pr>=1?'rain':''}">${fmt(pr,1)}</td>`
+      + `<td>${windDir(s.wdir)} ${fmt(s.wind,0)}</td><td>${fmt(s.rh,0)}</td>`
+      + (kmaOk ? `<td class="${pop>=60?'rain':''}">${fmt(pop,0)}${pop!=null?'%':''}</td>` : '')
+      + `</tr>`;
+  });
+  const rep = met.rep;
+  const [wdesc,wemo] = (rep && rep.code!=null) ? wmo(rep.code) : ["—","❓"];
+  const repWhen = rep ? (rep.span===1 ? `${p2(rep.hour)}시 기준` : `${p2(rep.hour)}–${p2((rep.hour+rep.span)%24)}시 구간 기준`) : '';
+  const hasThunder = met.slots.some(s=>s.code!=null && s.code>=95);
+  const risk = capeRisk(null, hasThunder);
+  const why = mainRes && !mainRes.ok
+    ? `Open-Meteo 응답 실패${mainRes.status?' (HTTP '+mainRes.status+')':(mainRes.timeout?' (10초 내 응답 없음)':'')}`
+    : 'Open-Meteo 종합예보 데이터 없음';
+  const upd = met.updatedAt ? metKST(met.updatedAt) : null;
+  const updTxt = upd ? `${upd.date.slice(5).replace('-','.')} ${p2(upd.hour)}:${p2(upd.minute)} 발표` : '최근 발표';
+  const gapTxt = met.granularity==='1h' ? '1시간 간격'
+    : met.granularity==='6h' ? '6시간 간격' : '1시간·6시간 간격 혼합';
+  return `<div class="card">
+    <div class="card-head"><h2>${COURSE.name}</h2><div class="course-meta">${COURSE.addr}</div>
+      <span class="date-badge">📅 ${DATE.replaceAll('-','.')} (${weekday(DATE)})</span></div>
+    <div class="waiting" style="padding:10px 0 0"><p style="margin:0">⚠️ ${why} — <b>노르웨이 기상청(MET) 직접 예보</b>로 대신 표시합니다.${kmaOk?' <b>기상청 단기예보</b>의 강수확률도 함께 표시합니다.':''}</p>
+      <p style="margin:6px 0 0;font-size:12px">api.met.no 직접 호출 · ${gapTxt} · 약 10일 범위 · MET는 강수확률·돌풍·CAPE를 제공하지 않습니다.</p></div>
+    <div class="headline">
+      <div class="wxicon">${wemo}</div>
+      <div class="bigtemp">${fmt(rep&&rep.temp,0)}<span style="font-size:22px">°C</span></div>
+      <div class="desc"><div>${wdesc}</div>
+        <div class="sm">${repWhen} · 노르웨이 기상청(MET)</div>
+        <div class="sm">낮 최고 ${fmt(daily.temperature_2m_max,0)}° / 최저 ${fmt(daily.temperature_2m_min,0)}° · 습도 ${fmt(rep&&rep.rh,0)}%</div>
+      </div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="k">최저기온</div><div class="v">${fmt(daily.temperature_2m_min,0)}<span class="u">°C</span></div></div>
+      <div class="metric"><div class="k">최고기온</div><div class="v">${fmt(daily.temperature_2m_max,0)}<span class="u">°C</span></div></div>
+      <div class="metric"><div class="k">예상 강수량</div><div class="v">${fmt(daily.precipitation_sum,1)}<span class="u">mm</span></div></div>
+      <div class="metric"><div class="k">바람(최대)</div><div class="v">${fmt(daily.wind_speed_10m_max,0)}<span class="u">km/h</span></div></div>
+    </div>
+    <div class="risk ${risk.cls}"><span style="font-size:16px">⚡</span>
+      <span>낙뢰 위험 <span class="tag">${risk.tag}</span></span><span class="note">${risk.txt}</span></div>
+    <div class="sec-title">시간대별 예보 (06–19시) · 노르웨이 MET 직접 (${gapTxt})</div>
+    <div class="tbl-scroll"><table>
+      <thead><tr><th>시각</th><th></th><th>기온</th><th>강수<br>mm</th><th>바람<br>km/h</th><th>습도</th>${kmaOk?'<th>강수<br>확률<br><span style="font-weight:400">기상청</span></th>':''}</tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <div class="sec-title">기관별 예보 비교 (당일 요약)</div>
+    <div class="tbl-scroll"><table class="src-table">
+      <thead><tr><th>출처</th><th>날씨</th><th>최저/최고</th><th>강수확률</th><th>강수량</th><th>최대풍속</th></tr></thead>
+      <tbody>${srcRows(srcRes, kmaData, met)}</tbody></table></div>
+    <div class="cardfoot">위치 좌표 ${COURSE.lat}, ${COURSE.lon} · 시간대 Asia/Seoul · MET ${updTxt}${met.granularity==='6h'?' · 6시간 간격 행의 기온·바람은 구간 시작 시각 값, 강수량은 구간 합계':''}</div>
+  </div>`;
+}
+
 /* 예보 서버 호출 자체가 실패했을 때(범위 밖이 아님) — "예보 준비 중"과 구분해 표시 */
 function errorCard(mainRes){
   const code = mainRes && mainRes.status ? ' (HTTP '+mainRes.status+')' : '';
@@ -364,13 +448,22 @@ async function load(){
     fetchKMA(COURSE.lat, COURSE.lon, DATE)            // 기상청 공식 API 직접 호출
   ]);
   const hasData = mainRes.ok && mainRes.data.hourly && mainRes.data.hourly.temperature_2m.some(v=>v!=null);
+  /* Open-Meteo가 비었을 때만 MET를 직접 호출(정상 동작 중에는 외부 호출을 늘리지 않음) */
+  let metData = null;
+  const dLeft = daysUntil(DATE);
+  if(!hasData && dLeft>=0 && dLeft<=MET_MAX_DAYS){
+    metData = await fetchMET(COURSE.lat, COURSE.lon, DATE);
+  }
   const stamp = '업데이트: '+new Date().toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
   if(hasData){
     document.getElementById('card').innerHTML = dataCard(mainRes.data, srcRes.ok?srcRes.data:null, kmaData);
     setStatus('ok', stamp);
-  }else if(daysUntil(DATE) < 0){
+  }else if(dLeft < 0){
     document.getElementById('card').innerHTML = pastCard();
     setStatus('err','지난 날짜');
+  }else if(metData && metData.ok){
+    document.getElementById('card').innerHTML = metCard(metData, kmaData, srcRes.ok?srcRes.data:null, mainRes);
+    setStatus('wait','노르웨이 MET 직접 예보 · Open-Meteo '+(mainRes.ok?'데이터 없음':'응답 실패'));
   }else if(kmaData && kmaData.ok){
     document.getElementById('card').innerHTML = kmaOnlyCard(kmaData, srcRes.ok?srcRes.data:null, mainRes);
     setStatus('wait','기상청 예보만 표시 · Open-Meteo '+(mainRes.ok?'데이터 없음':'응답 실패'));
