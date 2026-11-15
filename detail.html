@@ -375,7 +375,7 @@ function metCard(met, kmaData, srcRes, mainRes){
   return `<div class="card">
     <div class="card-head"><h2>${COURSE.name}</h2><div class="course-meta">${COURSE.addr}</div>
       <span class="date-badge">📅 ${DATE.replaceAll('-','.')} (${weekday(DATE)})</span></div>
-    <div class="waiting" style="padding:10px 0 0"><p style="margin:0">⚠️ ${why} — <b>노르웨이 기상청(MET) 직접 예보</b>로 대신 표시합니다.${kmaOk?' <b>기상청 단기예보</b>의 강수확률도 함께 표시합니다.':''}</p>
+    <div class="waiting" style="padding:14px 20px 2px"><p style="margin:0">⚠️ ${why} — <b>노르웨이 기상청(MET) 직접 예보</b>로 대신 표시합니다.${kmaOk?' <b>기상청 단기예보</b>의 강수확률도 함께 표시합니다.':''}</p>
       <p style="margin:6px 0 0;font-size:12px">api.met.no 직접 호출 · ${gapTxt} · 약 10일 범위 · MET는 강수확률·돌풍·CAPE를 제공하지 않습니다.</p></div>
     <div class="headline">
       <div class="wxicon">${wemo}</div>
