@@ -236,9 +236,16 @@ function capeRisk(cape, hasThunder){
   return {cls:"low",tag:"낮음",txt:"대기 안정(CAPE "+Math.round(cape)+")"};
 }
 
+/* 응답이 없으면 timeoutMs 후 포기(기본 10초) — 접속이 막힌 환경에서 화면이 오래 멈추지 않게 함 */
+const FETCH_TIMEOUT_MS = 10000;
+function fetchWithTimeout(url, ms){
+  const ctl = new AbortController();
+  const timer = setTimeout(()=>ctl.abort(), ms||FETCH_TIMEOUT_MS);
+  return fetch(url,{signal:ctl.signal}).finally(()=>clearTimeout(timer));
+}
 async function fetchMaybe(url){
-  try{ const r=await fetch(url); if(!r.ok) return {ok:false, status:r.status}; return {ok:true, data:await r.json()}; }
-  catch(e){ return {ok:false, status:0, err:e.message}; }
+  try{ const r=await fetchWithTimeout(url); if(!r.ok) return {ok:false, status:r.status}; return {ok:true, data:await r.json()}; }
+  catch(e){ return {ok:false, status:0, timeout:(e&&e.name==='AbortError'), err:e.message}; }
 }
 function mainURL(lat,lon,date){
   const h="temperature_2m,apparent_temperature,precipitation,precipitation_probability,wind_speed_10m,wind_gusts_10m,wind_direction_10m,relative_humidity_2m,cape,weather_code";
@@ -315,7 +322,7 @@ async function fetchKMA(lat, lon, date){
     +`&pageNo=1&numOfRows=1000&dataType=JSON&base_date=${base_date}&base_time=${base_time}&nx=${nx}&ny=${ny}`;
   let j;
   try{
-    const r=await fetch(url);
+    const r=await fetchWithTimeout(url);
     if(!r.ok) return {ok:false, status:r.status};
     j=await r.json();
   }catch(e){ return {ok:false, err:e.message}; }
