@@ -119,14 +119,14 @@
   <div id="favWrap"></div>
 
   <div class="footnote">
-    <b>데이터 출처</b> · 예보는 <b>Open-Meteo</b>를 통해 각 기관 원본 모델(🇰🇷기상청 KMA · 🇯🇵일본기상청 JMA · 🇪🇺유럽 ECMWF · 🇩🇪독일 DWD · 🇺🇸미국 NOAA · 🇫🇷메테오프랑스 · 🇬🇧영국 UKMO · 🇳🇴노르웨이 MET)에서 실시간 수신합니다. 지도 타일 © OpenStreetMap 기여자.<br>
+    <b>데이터 출처</b> · 예보는 <b>Open-Meteo</b>를 통해 각 기관 원본 모델(🇰🇷기상청 KMA · 🇯🇵일본기상청 JMA · 🇪🇺유럽 ECMWF · 🇩🇪독일 DWD · 🇺🇸미국 NOAA · 🇫🇷메테오프랑스 · 🇬🇧영국 UKMO · 🇳🇴노르웨이 MET)에서 실시간 수신합니다. Open-Meteo가 응답하지 않으면 🇳🇴 노르웨이 기상청(MET) 공개 API(api.met.no)를 직접 호출한 예보로 약 10일까지 대신 표시합니다. 지도 타일 © OpenStreetMap 기여자.<br>
     즐겨찾기는 이 브라우저에만 저장됩니다(개인 목록). 새 골프장은 <b>courses.js</b>의 <span style="font-family:monospace">GOLF_COURSES</span>에 좌표를 추가하면 지도·목록에 자동 반영됩니다.
   </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
   integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-<script src="courses.js?v=9"></script>
+<script src="courses.js?v=10"></script>
 <script>
 const ymd = d => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+String(d.getDate()).padStart(2,'0');
 const today = new Date(); today.setHours(0,0,0,0);
