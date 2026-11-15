@@ -362,7 +362,7 @@ function metCard(met, kmaData, srcRes, mainRes){
   });
   const rep = met.rep;
   const [wdesc,wemo] = (rep && rep.code!=null) ? wmo(rep.code) : ["—","❓"];
-  const repWhen = rep ? (rep.span===1 ? `${p2(rep.hour)}시 기준` : `${p2(rep.hour)}–${p2((rep.hour+rep.span)%24)}시 구간 기준`) : '';
+  const repWhen = rep ? (rep.span===1 ? `${p2(rep.hour)}시 기준` : `${p2(rep.hour)}–${p2((rep.hour+rep.span)%24)}시 구간 시작 기준`) : '';
   const hasThunder = met.slots.some(s=>s.code!=null && s.code>=95);
   const risk = capeRisk(null, hasThunder);
   const why = mainRes && !mainRes.ok

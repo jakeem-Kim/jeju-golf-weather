@@ -221,7 +221,11 @@ const WMO = {0:["맑음","☀️"],1:["대체로 맑음","🌤️"],2:["부분 �
 function wmo(c){ return WMO[c] || ["-","❓"]; }
 
 function windDir(deg){ if(deg==null) return "-"; const d=["북","북동","동","남동","남","남서","서","북서"]; return d[Math.round(deg/45)%8]; }
-function fmt(v,dec=0,dash="—"){ return (v==null||isNaN(v)) ? dash : Number(v).toFixed(dec); }
+function fmt(v,dec=0,dash="—"){
+  if(v==null||isNaN(v)) return dash;
+  const s=Number(v).toFixed(dec);
+  return /^-0(\.0*)?$/.test(s) ? s.slice(1) : s;   // -0.2 → "0" (음수 0 표기 방지)
+}
 
 function weekday(dateStr){ const d=new Date(dateStr+"T00:00:00"); return ["일","월","화","수","목","금","토"][d.getDay()]+"요일"; }
 function daysUntil(dateStr){ const t=new Date(dateStr+"T00:00:00"); const now=new Date(); now.setHours(0,0,0,0); return Math.round((t-now)/86400000); }
